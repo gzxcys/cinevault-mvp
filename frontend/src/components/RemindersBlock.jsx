@@ -1,13 +1,5 @@
-import {
-  Tv,
-  Clock,
-  Bookmark,
-  Heart,
-  AlertCircle,
-  ChevronRight,
-} from "lucide-react";
+import { Tv, Clock, Bookmark, Heart, AlertCircle } from "lucide-react";
 
-// Единый формат дней для всех блоков
 function formatDays(days) {
   if (!days || days < 1) return "сегодня";
   if (days === 1) return "вчера";
@@ -30,7 +22,6 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
     totalCount = 0,
   } = reminders;
 
-  // Если нет напоминаний — маленькая плашка
   if (totalCount === 0) {
     return (
       <div className="card p-5 border-emerald-500/30 bg-emerald-500/5">
@@ -54,7 +45,6 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
     );
   }
 
-  // Собираем секции
   const sections = [
     {
       id: "series",
@@ -63,7 +53,6 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
       subtitle: "Ты не досмотрел",
       items: unfinishedSeries,
       color: "text-electric",
-      borderColor: "border-electric/30",
       bgColor: "bg-electric/5",
     },
     {
@@ -73,7 +62,6 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
       subtitle: "Начал, но не закончил",
       items: unfinishedMovies,
       color: "text-purple-300",
-      borderColor: "border-purple-500/30",
       bgColor: "bg-purple-500/5",
     },
     {
@@ -83,7 +71,6 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
       subtitle: "Хотел посмотреть давно",
       items: forgottenPlans,
       color: "text-amber-300",
-      borderColor: "border-amber-500/30",
       bgColor: "bg-amber-500/5",
     },
     {
@@ -93,14 +80,12 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
       subtitle: "Твои любимые, давно не видел",
       items: rewatchSuggestions,
       color: "text-red-400",
-      borderColor: "border-red-500/30",
       bgColor: "bg-red-500/5",
     },
   ].filter((s) => s.items.length > 0);
 
   return (
     <div className="card overflow-hidden">
-      {/* Шапка блока */}
       <div className="p-4 md:p-5 border-b border-dark-border flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-full bg-electric/10 border border-electric/30
@@ -117,7 +102,6 @@ export default function RemindersBlock({ reminders, onFilmClick }) {
         </div>
       </div>
 
-      {/* Секции */}
       <div className="divide-y divide-dark-border">
         {sections.map((section) => (
           <ReminderSection
@@ -145,7 +129,6 @@ function ReminderSection({ section, onFilmClick }) {
         <span className="text-xs text-slate-500 font-mono">{items.length}</span>
       </div>
 
-      {/* Горизонтальный скролл с постерами */}
       <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
         <div className="flex gap-2 min-w-max">
           {items.map((item) => (
@@ -157,7 +140,6 @@ function ReminderSection({ section, onFilmClick }) {
                          hover:border-electric/60 hover:shadow-neon
                          active:scale-[0.97] transition-all text-left"
             >
-              {/* Постер */}
               <div className="w-full aspect-[2/3] bg-slate-800 relative overflow-hidden">
                 {item.poster_url ? (
                   <img
@@ -177,7 +159,6 @@ function ReminderSection({ section, onFilmClick }) {
                   </div>
                 )}
 
-                {/* Плашка с давностью */}
                 {typeof item.days_since === "number" && (
                   <div
                     className="absolute bottom-1 left-1 right-1
@@ -191,7 +172,6 @@ function ReminderSection({ section, onFilmClick }) {
                 )}
               </div>
 
-              {/* Название */}
               <div className="p-2">
                 <p className="text-[11px] font-medium text-white line-clamp-2 leading-tight">
                   {item.title}

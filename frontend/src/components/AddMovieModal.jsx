@@ -16,7 +16,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { searchTmdb, findByImdb, getTmdbDetails } from "../services/tmdb.js";
-import { createFilm } from "../services/api.js";
+import { createFilm, getCatalogFilm } from "../services/api.js";
+import RatingInput from "./RatingInput.jsx";
 
 const STATUSES = [
   { value: "watched", label: "Просмотрено", icon: Check },
@@ -36,24 +37,22 @@ const SOURCE_PLACEHOLDERS = {
   physical: "DVD, Blu-ray, VHS...",
 };
 
-// Определяем, является ли запрос IMDb ID
 function isImdbId(q) {
   return /^tt\d{5,}$/i.test(q.trim());
 }
 
-export default function AddMovieModal({ open, onClose, onAdded }) {
-  const [step, setStep] = useState("search"); // 'search' | 'details'
+export default function AddMovieModal({ open, onClose, onAdded, prefillFilm }) {
+  const [step, setStep] = useState("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
-  const [selected, setSelected] = useState(null); // { tmdb_id, type, title, ... }
+  const [selected, setSelected] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
-  // Поля шага "детали"
-  const [status, setStatus] = useState("planned");
+  const [status, setStatus] = useState("watched");
   const [sourceType, setSourceType] = useState("streaming");
   const [sourceName, setSourceName] = useState("");
   const [rating, setRating] = useState(0);
@@ -61,28 +60,63 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
   const [tagInput, setTagInput] = useState("");
 
   const inputRef = useRef(null);
-  const searchAbortRef = useRef(0); // для отмены устаревших запросов
+  const searchAbortRef = useRef(0);
 
-  // Сброс при открытии/закрытии
   useEffect(() => {
     if (open) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-      setStep("search");
-      setQuery("");
-      setResults([]);
+      if (prefillFilm) {
+        // Показываем шаг "детали" сразу с базовой инфой
+        setSelected({
+          tmdb_id: prefillFilm.tmdb_id,
+          type: prefillFilm.type,
+          title: prefillFilm.title,
+          original_title: prefillFilm.original_title,
+          year: prefillFilm.year,
+          director: prefillFilm.director,
+          poster_url: prefillFilm.poster_url,
+          description: prefillFilm.description,
+          tmdb_rating: prefillFilm.tmdb_rating,
+          runtime: prefillFilm.runtime,
+          genres: prefillFilm.genres || [],
+          actors: [],
+          directors: [],
+        });
+        setStep("details");
+        setQuery("");
+        setResults([]);
+
+        // Асинхронно подтягиваем актёров и режиссёров
+        setLoadingDetails(true);
+        getCatalogFilm(prefillFilm.id)
+          .then((full) => {
+            setSelected((s) => ({
+              ...s,
+              genres: full.genres || s.genres,
+              actors: full.actors || [],
+              directors: full.directors || [],
+            }));
+          })
+          .catch(() => {
+            /* не критично — детали не подтянулись */
+          })
+          .finally(() => setLoadingDetails(false));
+      } else {
+        setStep("search");
+        setQuery("");
+        setResults([]);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
       setSearchError(null);
-      setSelected(null);
       setSaveError(null);
-      setStatus("planned");
+      setStatus("watched");
       setSourceType("streaming");
       setSourceName("");
       setRating(0);
       setTags([]);
       setTagInput("");
     }
-  }, [open]);
+  }, [open, prefillFilm]);
 
-  // Esc закрывает модалку
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -92,7 +126,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, saving]);
 
-  // Блокируем скролл body
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -102,7 +135,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
     }
   }, [open]);
 
-  // Живой поиск с debounce
   useEffect(() => {
     if (!open || step !== "search") return;
     const q = query.trim();
@@ -127,7 +159,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
         } else {
           data = await searchTmdb(q);
         }
-        // Игнорируем устаревшие ответы
         if (requestId !== searchAbortRef.current) return;
         setResults(data.results || []);
       } catch (err) {
@@ -149,7 +180,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
     onClose();
   }
 
-  // Выбор фильма из результатов → тянем полные детали → переход на шаг "детали"
   async function handleSelect(item) {
     setLoadingDetails(true);
     setSaveError(null);
@@ -161,7 +191,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
       setSelected({ ...details, type: item.type });
       setStep("details");
     } catch (err) {
-      // Фоллбэк — если детали не подтянулись, используем то, что из поиска
       setSelected({
         tmdb_id: item.tmdb_id,
         type: item.type,
@@ -237,6 +266,7 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
   }
 
   const searchingImdb = isImdbId(query);
+  const canGoBackToSearch = step === "details" && !prefillFilm;
 
   return (
     <div
@@ -249,7 +279,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                    flex flex-col overflow-hidden animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ============ ШАПКА ============ */}
         <div className="flex items-center justify-between p-4 md:p-5 border-b border-dark-border shrink-0">
           <div className="min-w-0">
             <h2 className="text-lg md:text-xl font-bold truncate">
@@ -272,12 +301,9 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
           </button>
         </div>
 
-        {/* ============ ТЕЛО ============ */}
         <div className="flex-1 overflow-y-auto p-4 md:p-5">
-          {/* ─────────── ШАГ 1: ПОИСК ─────────── */}
           {step === "search" && (
             <>
-              {/* Поле поиска */}
               <div className="relative">
                 <Search
                   size={20}
@@ -301,7 +327,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 )}
               </div>
 
-              {/* Индикатор IMDb-режима */}
               {searchingImdb && (
                 <div
                   className="mt-3 flex items-center gap-2 text-xs text-electric
@@ -312,7 +337,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 </div>
               )}
 
-              {/* Подсказки при пустом вводе */}
               {!query && (
                 <div className="mt-4 text-xs text-slate-500 leading-relaxed">
                   <p className="mb-2">Попробуй:</p>
@@ -336,7 +360,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 </div>
               )}
 
-              {/* Ошибка поиска */}
               {searchError && (
                 <div
                   className="mt-4 flex items-start gap-2 p-3 rounded-lg
@@ -347,7 +370,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 </div>
               )}
 
-              {/* Результаты */}
               <div className="mt-4 space-y-2">
                 {results.map((item) => (
                   <SearchResultItem
@@ -359,7 +381,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 ))}
               </div>
 
-              {/* Пусто */}
               {query.length >= 2 &&
                 !searching &&
                 !searchError &&
@@ -375,7 +396,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                   </div>
                 )}
 
-              {/* Лоадер деталей */}
               {loadingDetails && (
                 <div className="fixed inset-0 z-10 bg-black/60 flex items-center justify-center">
                   <div className="flex flex-col items-center gap-3">
@@ -387,10 +407,8 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
             </>
           )}
 
-          {/* ─────────── ШАГ 2: ДЕТАЛИ ─────────── */}
           {step === "details" && selected && (
             <>
-              {/* Выбранный фильм */}
               <div className="flex gap-4 p-3 rounded-xl bg-dark-bg border border-electric/30 shadow-neon">
                 <div
                   className="w-20 h-28 rounded-md overflow-hidden shrink-0
@@ -446,16 +464,67 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 </div>
               </div>
 
-              <button
-                onClick={handleBackToSearch}
-                disabled={saving}
-                className="text-xs text-slate-400 hover:text-electric mt-2 transition
-                           disabled:opacity-50"
-              >
-                ← Найти другой фильм
-              </button>
+              {/* Индикатор загрузки деталей */}
+              {loadingDetails && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-electric">
+                  <Loader2 size={12} className="animate-spin" />
+                  Загружаю актёров...
+                </div>
+              )}
 
-              {/* Жанры (только чипсы для инфы) */}
+              {/* Актёры (если подтянулись) */}
+              {selected.actors?.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">
+                    В ролях
+                  </p>
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                    {selected.actors.slice(0, 10).map((a) => (
+                      <div
+                        key={a.id}
+                        className="flex flex-col items-center gap-1.5 shrink-0 w-16"
+                      >
+                        {a.profile_url ? (
+                          <img
+                            src={a.profile_url}
+                            alt={a.name}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-dark-border"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="w-12 h-12 rounded-full bg-electric/20 border-2 border-dark-border
+                                          flex items-center justify-center text-electric text-xs font-bold"
+                          >
+                            {a.name
+                              .split(" ")
+                              .map((p) => p[0])
+                              .slice(0, 2)
+                              .join("")}
+                          </div>
+                        )}
+                        <p className="text-[10px] text-white text-center leading-tight line-clamp-2">
+                          {a.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {canGoBackToSearch && (
+                <button
+                  onClick={handleBackToSearch}
+                  disabled={saving}
+                  className="text-xs text-slate-400 hover:text-electric mt-2 transition
+                             disabled:opacity-50"
+                >
+                  ← Найти другой фильм
+                </button>
+              )}
+
               {selected.genres?.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {selected.genres.map((g) => (
@@ -470,7 +539,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 </div>
               )}
 
-              {/* Статус */}
               <div className="mt-5">
                 <label className="text-xs text-slate-400 uppercase tracking-wide mb-2 block">
                   Статус
@@ -497,7 +565,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 </div>
               </div>
 
-              {/* Источник */}
               <div className="mt-5">
                 <label className="text-xs text-slate-400 uppercase tracking-wide mb-2 block">
                   Источник
@@ -535,37 +602,20 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 />
               </div>
 
-              {/* Рейтинг (если просмотрено) */}
               {status === "watched" && (
                 <div className="mt-5">
                   <label className="text-xs text-slate-400 uppercase tracking-wide mb-2 block">
-                    Твоя оценка
+                    Моя оценка{" "}
+                    <span className="text-slate-500 normal-case">(1-10)</span>
                   </label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setRating(n === rating ? 0 : n)}
-                        disabled={saving}
-                        className="transition-transform active:scale-90 disabled:opacity-50"
-                        aria-label={`Оценка ${n}`}
-                      >
-                        <Star
-                          size={32}
-                          className={
-                            n <= rating
-                              ? "text-amber-400"
-                              : "text-slate-600 hover:text-amber-400/50"
-                          }
-                          fill={n <= rating ? "currentColor" : "none"}
-                        />
-                      </button>
-                    ))}
-                  </div>
+                  <RatingInput
+                    value={rating}
+                    onChange={setRating}
+                    disabled={saving}
+                  />
                 </div>
               )}
 
-              {/* Теги */}
               <div className="mt-5">
                 <label className="text-xs text-slate-400 uppercase tracking-wide mb-2 block">
                   Теги
@@ -619,7 +669,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
                 )}
               </div>
 
-              {/* Ошибка сохранения */}
               {saveError && (
                 <div
                   className="mt-4 flex items-start gap-2 p-3 rounded-lg
@@ -633,7 +682,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
           )}
         </div>
 
-        {/* ============ ФУТЕР ============ */}
         {step === "details" && selected && (
           <div
             className="p-4 md:p-5 border-t border-dark-border shrink-0
@@ -664,9 +712,6 @@ export default function AddMovieModal({ open, onClose, onAdded }) {
   );
 }
 
-// ============================================================
-// Карточка результата поиска
-// ============================================================
 function SearchResultItem({ item, onClick, disabled }) {
   return (
     <button
@@ -677,7 +722,6 @@ function SearchResultItem({ item, onClick, disabled }) {
                  hover:border-electric/40 transition-all text-left
                  active:scale-[0.99] disabled:opacity-60 disabled:cursor-wait"
     >
-      {/* Постер */}
       <div
         className="w-12 h-16 rounded-md overflow-hidden shrink-0
                       bg-gradient-to-br from-electric/20 to-purple-500/20
@@ -699,7 +743,6 @@ function SearchResultItem({ item, onClick, disabled }) {
         )}
       </div>
 
-      {/* Текст */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <p className="font-semibold text-sm text-white truncate flex-1">
@@ -730,7 +773,6 @@ function SearchResultItem({ item, onClick, disabled }) {
         </div>
       </div>
 
-      {/* Плюс */}
       <Plus size={18} className="text-electric shrink-0" />
     </button>
   );

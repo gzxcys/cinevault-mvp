@@ -1,4 +1,6 @@
-const BASE = "/api";
+import { API_URL } from "../config.js";
+
+const BASE = API_URL;
 const TOKEN_KEY = "cinevault_token";
 
 async function request(path, options = {}) {
@@ -64,6 +66,19 @@ export async function deleteFilm(id) {
   return request(`/films/${id}`, { method: "DELETE" });
 }
 
+// ---------- Глобальный каталог ----------
+export async function getCatalog(params = {}) {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") qs.append(k, v);
+  });
+  return request(`/catalog?${qs.toString()}`);
+}
+
+export async function getCatalogFilm(id) {
+  return request(`/catalog/${id}`);
+}
+
 // ---------- Статистика ----------
 export async function getStats() {
   return request("/stats");
@@ -104,6 +119,7 @@ export async function adminResendVerify(id) {
 export async function adminDeleteUser(id) {
   return request(`/admin/users/${id}`, { method: "DELETE" });
 }
+
 export async function adminGetFilms(params = {}) {
   const qs = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {

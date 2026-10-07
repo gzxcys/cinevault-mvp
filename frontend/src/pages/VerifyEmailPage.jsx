@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { CheckCircle2, XCircle, Loader2, ArrowRight, Mail } from "lucide-react";
+import { API_URL } from "../config.js";
 
 export default function VerifyEmailPage() {
-  const [status, setStatus] = useState("loading"); // loading | success | error
+  const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState(null);
 
@@ -16,7 +17,7 @@ export default function VerifyEmailPage() {
       return;
     }
 
-    fetch(`/api/auth/verify-email?token=${token}`)
+    fetch(`${API_URL}/auth/verify-email?token=${token}`)
       .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
       .then(({ ok, data }) => {
         if (ok) {
@@ -35,12 +36,11 @@ export default function VerifyEmailPage() {
   }, []);
 
   function goToLogin() {
-    window.location.href = "/";
+    window.location.href = "./";
   }
 
   return (
     <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
-      {/* Декоративный фон */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute -top-40 -left-40 w-96 h-96 rounded-full

@@ -1,7 +1,6 @@
-// Клиент для /api/tmdb/* эндпоинтов нашего бэкенда.
-// Токен авторизации подставляется автоматически из localStorage.
+import { API_URL } from "../config.js";
 
-const BASE = "/api/tmdb";
+const BASE = `${API_URL}/tmdb`;
 const TOKEN_KEY = "cinevault_token";
 
 async function request(path) {
@@ -28,32 +27,16 @@ async function request(path) {
   return res.json();
 }
 
-/**
- * Поиск фильмов и сериалов по названию.
- * @param {string} query
- * @returns {Promise<{results: Array}>}
- */
 export async function searchTmdb(query) {
   if (!query || query.trim().length < 2) return { results: [] };
   return request(`/search?q=${encodeURIComponent(query.trim())}`);
 }
 
-/**
- * Поиск по IMDb ID (формат tt1234567).
- * @param {string} imdbId
- * @returns {Promise<{results: Array}>}
- */
 export async function findByImdb(imdbId) {
   const clean = imdbId.trim();
   return request(`/find-by-imdb/${encodeURIComponent(clean)}`);
 }
 
-/**
- * Детали фильма (жанры, актёры, режиссёр).
- * @param {'movie'|'tv'} type
- * @param {number} tmdbId
- * @returns {Promise<Object>}
- */
 export async function getTmdbDetails(type, tmdbId) {
   return request(`/details/${type}/${tmdbId}`);
 }

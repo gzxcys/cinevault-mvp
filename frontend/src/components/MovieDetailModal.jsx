@@ -25,6 +25,7 @@ import {
 } from "../services/api.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { SOURCES_LIST, getSource } from "../utils/sources.js";
+import RatingInput from "./RatingInput.jsx";
 import WhereToWatch from "./WhereToWatch.jsx";
 
 const STATUSES = [
@@ -248,7 +249,7 @@ export default function MovieDetailModal({
                    flex flex-col overflow-hidden animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Верхняя панель с кнопками действий */}
+        {/* Верхние кнопки */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
           {film && (
             <>
@@ -286,7 +287,7 @@ export default function MovieDetailModal({
           </button>
         </div>
 
-        {/* Диалог подтверждения удаления */}
+        {/* Подтверждение удаления */}
         {confirmDelete && (
           <div className="absolute inset-0 z-20 bg-black/70 flex items-center justify-center p-4">
             <div className="bg-dark-card rounded-2xl p-6 max-w-sm w-full border border-red-500/40">
@@ -313,16 +314,11 @@ export default function MovieDetailModal({
                              hover:bg-red-600 active:scale-[0.98] transition disabled:opacity-60"
                 >
                   {deleting ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Удаляю...
-                    </>
+                    <Loader2 size={16} className="animate-spin" />
                   ) : (
-                    <>
-                      <Trash2 size={16} />
-                      Удалить
-                    </>
+                    <Trash2 size={16} />
                   )}
+                  Удалить
                 </button>
               </div>
             </div>
@@ -385,6 +381,7 @@ export default function MovieDetailModal({
                         </p>
                       )}
 
+                    {/* Год + длительность + тип */}
                     <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-300">
                       {film.year && (
                         <span className="inline-flex items-center gap-1">
@@ -396,12 +393,6 @@ export default function MovieDetailModal({
                           <Clock size={14} /> {film.runtime} мин
                         </span>
                       )}
-                      {film.tmdb_rating > 0 && (
-                        <span className="inline-flex items-center gap-1 text-amber-400">
-                          <Star size={14} fill="currentColor" />{" "}
-                          {film.tmdb_rating.toFixed(1)}
-                        </span>
-                      )}
                       {film.type === "series" && (
                         <span
                           className="text-[10px] px-2 py-0.5 rounded-full
@@ -411,6 +402,26 @@ export default function MovieDetailModal({
                         </span>
                       )}
                     </div>
+
+                    {/* Рейтинг TMDB — отдельным блоком с явной подписью */}
+                    {film.tmdb_rating > 0 && (
+                      <div
+                        className="mt-3 inline-flex items-center gap-2 px-3 py-1.5
+                                      rounded-lg bg-amber-500/10 border border-amber-500/30"
+                      >
+                        <Star
+                          size={14}
+                          className="text-amber-400"
+                          fill="currentColor"
+                        />
+                        <span className="text-xs text-slate-400">
+                          Рейтинг TMDB:
+                        </span>
+                        <span className="text-sm font-bold text-amber-400">
+                          {film.tmdb_rating.toFixed(1)}/10
+                        </span>
+                      </div>
+                    )}
 
                     {film.genres?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3">
@@ -471,38 +482,20 @@ export default function MovieDetailModal({
                   </button>
                 </div>
 
+                {/* Моя оценка 1-10 */}
                 {film.status === "watched" && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">Моя оценка:</span>
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          onClick={() =>
-                            patchFilm({
-                              user_rating: n === film.user_rating ? null : n,
-                            })
-                          }
-                          disabled={updating}
-                          className="transition-transform active:scale-90 disabled:opacity-50"
-                          aria-label={`Оценка ${n}`}
-                        >
-                          <Star
-                            size={20}
-                            className={
-                              n <= (film.user_rating || 0)
-                                ? "text-amber-400"
-                                : "text-slate-600 hover:text-amber-400/50"
-                            }
-                            fill={
-                              n <= (film.user_rating || 0)
-                                ? "currentColor"
-                                : "none"
-                            }
-                          />
-                        </button>
-                      ))}
-                    </div>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-2">
+                      <span className="text-slate-300 font-medium">
+                        Моя оценка
+                      </span>
+                      <span className="text-slate-500 ml-1.5">(1-10)</span>
+                    </p>
+                    <RatingInput
+                      value={film.user_rating || 0}
+                      onChange={(v) => patchFilm({ user_rating: v || null })}
+                      disabled={updating}
+                    />
                   </div>
                 )}
 
@@ -521,7 +514,7 @@ export default function MovieDetailModal({
                   </div>
                 )}
 
-                {/* ===== Источник — можно редактировать ===== */}
+                {/* Источник */}
                 <div className="flex items-start gap-2 pt-1">
                   <span className="text-xs text-slate-500 mt-1 shrink-0">
                     Источник:
@@ -734,7 +727,6 @@ export default function MovieDetailModal({
                 </div>
               )}
 
-              {/* РФ-сервисы */}
               <WhereToWatch film={film} />
             </>
           )}

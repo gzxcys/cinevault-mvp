@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
+import { API_URL } from "../config.js";
 
 const AuthContext = createContext(null);
 
@@ -15,7 +16,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [emailNotVerified, setEmailNotVerified] = useState(null);
 
-  // При старте: если есть токен — проверяем его и получаем юзера
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    fetch("/api/auth/me", {
+    fetch(`${API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {
@@ -42,7 +42,6 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Слушаем событие auth:expired из api.js
   useEffect(() => {
     const onExpired = () => {
       setUser(null);
@@ -53,7 +52,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -79,7 +78,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (email, password, name) => {
-    const res = await fetch("/api/auth/register", {
+    const res = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, name }),
@@ -101,7 +100,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const resendVerification = useCallback(async (email) => {
-    const res = await fetch("/api/auth/resend-verification", {
+    const res = await fetch(`${API_URL}/auth/resend-verification`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),

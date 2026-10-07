@@ -8,6 +8,7 @@ import authRouter from "./routes/auth.js";
 import recommendationsRouter from "./routes/recommendations.js";
 import tmdbRouter from "./routes/tmdb.js";
 import adminRouter from "./routes/admin.js";
+import catalogRouter from "./routes/catalog.js";
 
 dotenv.config();
 
@@ -58,7 +59,7 @@ app.use("/api/stats", statsRouter);
 app.use("/api/recommendations", recommendationsRouter);
 app.use("/api/tmdb", tmdbRouter);
 app.use("/api/admin", adminRouter);
-
+app.use("/api/catalog", catalogRouter);
 // Health-check
 app.get("/api/health", (req, res) => {
   res.json({

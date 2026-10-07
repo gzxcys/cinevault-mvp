@@ -9,9 +9,12 @@ import {
   Pencil,
   X,
   Crown,
+  Globe,
+  Lightbulb,
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext.jsx";
 import { getFilms, getStats } from "./services/api.js";
+import { fuzzySearchFilms } from "./utils/fuzzySearch.js";
 import MovieGrid from "./components/MovieGrid.jsx";
 import CatalogTabs from "./components/CatalogTabs.jsx";
 import SourceFilters from "./components/SourceFilters.jsx";
@@ -20,6 +23,7 @@ import RemindersBlock from "./components/RemindersBlock.jsx";
 import AddMovieModal from "./components/AddMovieModal.jsx";
 import MovieDetailModal from "./components/MovieDetailModal.jsx";
 import RecommendationsView from "./components/RecommendationsView.jsx";
+import GlobalCatalogView from "./components/GlobalCatalogView.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
@@ -53,6 +57,7 @@ function MainApp({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [prefillFilm, setPrefillFilm] = useState(null);
   const [detailFilmId, setDetailFilmId] = useState(null);
 
   const isAdmin = Boolean(user?.is_admin);
@@ -110,6 +115,16 @@ function MainApp({ user, onLogout }) {
     window.scrollTo({ top: 0 });
   }
 
+  function openAddWithPrefill(film) {
+    setPrefillFilm(film);
+    setShowAddModal(true);
+  }
+
+  function closeAddModal() {
+    setShowAddModal(false);
+    setPrefillFilm(null);
+  }
+
   const displayName = user.full_name || user.name || user.email;
   const initials = displayName
     .split(" ")
@@ -138,12 +153,18 @@ function MainApp({ user, onLogout }) {
           <p className="text-xs text-slate-400 mt-1">Твоя видеоколлекция</p>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           <NavItem
             icon={<Film size={20} />}
-            label="Каталог"
+            label="Моя коллекция"
             active={tab === "catalog"}
             onClick={() => setTab("catalog")}
+          />
+          <NavItem
+            icon={<Globe size={20} />}
+            label="Каталог фильмов"
+            active={tab === "global"}
+            onClick={() => setTab("global")}
           />
           <NavItem
             icon={<Sparkles size={20} />}
@@ -169,7 +190,10 @@ function MainApp({ user, onLogout }) {
 
         <div className="p-4 space-y-2 border-t border-dark-border">
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setPrefillFilm(null);
+              setShowAddModal(true);
+            }}
             className="btn-electric w-full flex items-center justify-center gap-2"
           >
             <Plus size={20} />
@@ -264,7 +288,10 @@ function MainApp({ user, onLogout }) {
                 )}
               </button>
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => {
+                  setPrefillFilm(null);
+                  setShowAddModal(true);
+                }}
                 className="p-2 rounded-lg bg-electric text-dark-bg active:scale-95 transition"
                 aria-label="Добавить фильм"
               >
@@ -282,6 +309,12 @@ function MainApp({ user, onLogout }) {
               films={films}
               onFilmClick={(f) => setDetailFilmId(f.id)}
               request={catalogRequest}
+            />
+          )}
+          {!loading && !error && tab === "global" && (
+            <GlobalCatalogView
+              onOpenDetail={(id) => setDetailFilmId(id)}
+              onAddToLibrary={openAddWithPrefill}
             />
           )}
           {!loading && !error && tab === "recommendations" && (
@@ -304,9 +337,15 @@ function MainApp({ user, onLogout }) {
         >
           <BottomNavItem
             icon={<Film size={22} />}
-            label="Каталог"
+            label="Коллекция"
             active={tab === "catalog"}
             onClick={() => setTab("catalog")}
+          />
+          <BottomNavItem
+            icon={<Globe size={22} />}
+            label="Каталог"
+            active={tab === "global"}
+            onClick={() => setTab("global")}
           />
           <BottomNavItem
             icon={<Sparkles size={22} />}
@@ -325,7 +364,8 @@ function MainApp({ user, onLogout }) {
 
       <AddMovieModal
         open={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={closeAddModal}
+        prefillFilm={prefillFilm}
         onAdded={(film) => {
           setFilms((prev) => [film, ...prev]);
           reloadData();
@@ -394,6 +434,9 @@ function ErrorState({ message }) {
   );
 }
 
+// ============================================================
+// CatalogView — с Fuse.js для поиска
+// ============================================================
 function CatalogView({ films, onFilmClick, request }) {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
@@ -472,6 +515,7 @@ function CatalogView({ films, onFilmClick, request }) {
       .slice(0, 12);
   }, [filmsAfterSource]);
 
+  // Финальная фильтрация через Fuse.js
   const filtered = useMemo(() => {
     let list = filmsAfterSource;
 
@@ -480,29 +524,7 @@ function CatalogView({ films, onFilmClick, request }) {
     }
 
     if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      const scored = [];
-      for (const f of list) {
-        let score = 0;
-        const title = (f.title || "").toLowerCase();
-        const original = (f.original_title || "").toLowerCase();
-        const director = (f.director || "").toLowerCase();
-
-        if (title === q) score += 100;
-        else if (title.startsWith(q)) score += 50;
-        else if (title.includes(q)) score += 30;
-
-        if (original && original.includes(q)) score += 25;
-        if (director && director.includes(q)) score += 20;
-        if ((f.genres || []).some((g) => g.toLowerCase().includes(q)))
-          score += 15;
-        if ((f.tags || []).some((t) => t.toLowerCase().includes(q)))
-          score += 10;
-
-        if (score > 0) scored.push({ film: f, score });
-      }
-      scored.sort((a, b) => b.score - a.score);
-      list = scored.map((s) => s.film);
+      list = fuzzySearchFilms(list, search.trim());
     }
 
     return list;
@@ -513,7 +535,7 @@ function CatalogView({ films, onFilmClick, request }) {
   return (
     <>
       <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold mb-1">Каталог</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-1">Моя коллекция</h2>
         <p className="text-slate-400 text-sm">
           {filtered.length} {filtered.length === 1 ? "позиция" : "позиций"}
           {hasActiveFilter && ` из ${films.length}`}
@@ -679,7 +701,7 @@ function DashboardView({ stats, onTileClick, onFilmClick }) {
           <h3 className="font-semibold mb-2">Средний рейтинг</h3>
           <p className="text-4xl font-bold text-electric">
             {stats.avgRating || "—"}
-            <span className="text-lg text-slate-500 ml-1">/ 5</span>
+            <span className="text-lg text-slate-500 ml-1">/ 10</span>
           </p>
         </div>
 

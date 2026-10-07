@@ -18,8 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext.jsx";
-
-const API_BASE = "/api";
+import { API_URL } from "../config.js";
 
 function getToken() {
   return localStorage.getItem("cinevault_token");
@@ -27,20 +26,14 @@ function getToken() {
 
 export default function ProfilePage({ onBack, initialMode = "view" }) {
   const { user, setUser } = useAuth();
-  const [mode, setMode] = useState(initialMode); // 'view' | 'edit'
+  const [mode, setMode] = useState(initialMode);
 
-  // ============================================================
-  // VIEW-РЕЖИМ — красивая карточка профиля
-  // ============================================================
   if (mode === "view") {
     return (
       <ProfileView user={user} onBack={onBack} onEdit={() => setMode("edit")} />
     );
   }
 
-  // ============================================================
-  // EDIT-РЕЖИМ — форма редактирования
-  // ============================================================
   return (
     <ProfileEdit
       user={user}
@@ -52,9 +45,6 @@ export default function ProfilePage({ onBack, initialMode = "view" }) {
   );
 }
 
-// ============================================================
-// VIEW — просмотр профиля
-// ============================================================
 function ProfileView({ user, onBack, onEdit }) {
   const displayName = user.full_name || user.name || user.email;
   const initials = displayName
@@ -64,7 +54,6 @@ function ProfileView({ user, onBack, onEdit }) {
     .join("")
     .toUpperCase();
 
-  // Собираем заполненные контакты
   const contacts = [
     {
       icon: Globe,
@@ -95,7 +84,6 @@ function ProfileView({ user, onBack, onEdit }) {
 
   return (
     <div className="min-h-screen bg-dark-bg text-white">
-      {/* Шапка */}
       <header className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
@@ -117,7 +105,6 @@ function ProfileView({ user, onBack, onEdit }) {
       </header>
 
       <main className="max-w-3xl mx-auto p-4 md:p-6 pb-24">
-        {/* Карточка юзера */}
         <div className="card p-6 mb-4">
           <div className="flex flex-col sm:flex-row items-center gap-5">
             <div
@@ -176,7 +163,6 @@ function ProfileView({ user, onBack, onEdit }) {
           )}
         </div>
 
-        {/* Контакты */}
         {contacts.length > 0 && (
           <div className="card p-5 mb-4">
             <h3 className="text-xs text-slate-400 uppercase tracking-wide mb-3">
@@ -205,7 +191,6 @@ function ProfileView({ user, onBack, onEdit }) {
           </div>
         )}
 
-        {/* Если профиль пустой — приглашение заполнить */}
         {!user.full_name &&
           !user.workplace &&
           !user.bio &&
@@ -223,7 +208,6 @@ function ProfileView({ user, onBack, onEdit }) {
             </div>
           )}
 
-        {/* Метаинформация */}
         <div className="mt-6 text-center text-xs text-slate-600">
           В CineVault с{" "}
           {new Date(user.created_at).toLocaleDateString("ru-RU", {
@@ -237,9 +221,6 @@ function ProfileView({ user, onBack, onEdit }) {
   );
 }
 
-// ============================================================
-// EDIT — форма редактирования
-// ============================================================
 function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
   const [form, setForm] = useState({
     name: user?.name || "",
@@ -279,7 +260,7 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
     setSuccess(null);
 
     try {
-      const res = await fetch(`${API_BASE}/auth/me`, {
+      const res = await fetch(`${API_URL}/auth/me`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -329,7 +310,7 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
         reader.readAsDataURL(file);
       });
 
-      const res = await fetch(`${API_BASE}/auth/avatar`, {
+      const res = await fetch(`${API_URL}/auth/avatar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -356,7 +337,7 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
     setUploading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/auth/avatar`, {
+      const res = await fetch(`${API_URL}/auth/avatar`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
       });
@@ -374,7 +355,6 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
 
   return (
     <div className="min-h-screen bg-dark-bg text-white">
-      {/* Шапка */}
       <header className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
@@ -408,7 +388,6 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
           </div>
         )}
 
-        {/* Аватар */}
         <div className="card p-6 mb-4">
           <div className="flex flex-col sm:flex-row items-center gap-5">
             <div className="relative shrink-0">
@@ -478,7 +457,6 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
           </div>
         </div>
 
-        {/* Форма */}
         <form onSubmit={handleSave} className="space-y-4">
           <div className="card p-5 space-y-4">
             <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-1">
