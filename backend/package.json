@@ -23,13 +23,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^10.0.15"
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.15"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
   },
-  "allowScripts": {
-    "better-sqlite3@13.0.3": true
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
