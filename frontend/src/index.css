@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Базовые настройки для всего приложения */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent; /* убираем синюю подсветку при тапе на мобиле */
+  }
+
+  html {
+    background-color: #0f172a;
+    color-scheme: dark; /* нативная тёмная тема для скроллбаров, инпутов и т.д. */
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: #0f172a;
+    color: #ffffff;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+    overflow-x: hidden; /* запрещаем горизонтальный скролл */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Красивый тонкий скроллбар */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7df9ff;
+  }
+
+  /* Поля ввода тёмной темы */
+  input,
+  textarea,
+  select {
+    background-color: transparent;
+    color: #ffffff;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
+}
+
+/* Переиспользуемые классы */
+@layer components {
+  .btn-electric {
+    @apply bg-electric text-dark-bg font-semibold px-4 py-2 rounded-lg
+           transition-all duration-200 hover:bg-electric-dim active:scale-95
+           shadow-neon hover:shadow-neon-lg;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent border border-dark-border text-white
+           px-4 py-2 rounded-lg transition-all duration-200
+           hover:border-electric hover:text-electric active:scale-95;
+  }
+
+  .card {
+    @apply bg-dark-card rounded-xl border border-dark-border
+           transition-all duration-200 hover:border-electric/50;
+  }
+
+  /* Отступ под нижнюю навигацию на мобиле (bottom nav) */
+  .pb-safe-mobile {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  /* Скрыть скроллбар, но оставить скролл (для горизонтальных рядов) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
