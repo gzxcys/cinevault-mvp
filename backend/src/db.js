@@ -17,6 +17,15 @@ const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
+// ============================================================
+// UDF: регистронезависимая нормализация для кириллицы
+// Встроенный SQLite LOWER() не всегда корректно работает с русскими буквами
+// ============================================================
+db.function("lower_ru", (str) => {
+  if (str === null || str === undefined) return null;
+  return String(str).toLowerCase();
+});
+
 // ============ СХЕМА БД ============
 
 db.exec(`
@@ -36,12 +45,16 @@ db.exec(`
     instagram TEXT,
     email_verified INTEGER DEFAULT 0,
     verification_token TEXT,
+    reset_token TEXT,
+    reset_expires TEXT,
+    is_admin INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
-  
+
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
   CREATE INDEX IF NOT EXISTS idx_users_verification ON users(verification_token);
+  CREATE INDEX IF NOT EXISTS idx_users_reset ON users(reset_token);
 
   -- ===== Глобальный каталог фильмов =====
   CREATE TABLE IF NOT EXISTS films (
@@ -54,9 +67,9 @@ db.exec(`
     poster_url TEXT,
     backdrop_url TEXT,
     description TEXT,
-    type TEXT DEFAULT 'movie',           -- movie | series | documentary
-    runtime INTEGER,                     -- длительность в минутах
-    tmdb_rating REAL,                    -- рейтинг TMDB (для сортировки)
+    type TEXT DEFAULT 'movie',
+    runtime INTEGER,
+    tmdb_rating REAL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -94,9 +107,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS film_people (
     film_id INTEGER NOT NULL,
     person_id INTEGER NOT NULL,
-    role TEXT NOT NULL,                  -- 'actor' | 'director'
-    character TEXT,                      -- имя персонажа (для актёров)
-    order_index INTEGER DEFAULT 0,       -- порядок в титрах
+    role TEXT NOT NULL,
+    character TEXT,
+    order_index INTEGER DEFAULT 0,
     PRIMARY KEY (film_id, person_id, role),
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE,
     FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE
@@ -109,12 +122,12 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     film_id INTEGER NOT NULL,
-    status TEXT DEFAULT 'planned',       -- watched | watching | planned
+    status TEXT DEFAULT 'planned',
     is_favorite INTEGER DEFAULT 0,
-    source_type TEXT DEFAULT 'streaming',-- streaming | local | physical
+    source_type TEXT DEFAULT 'streaming',
     source_name TEXT,
-    user_rating INTEGER,                 -- 1-5
-    tags TEXT,                           -- JSON-массив строк
+    user_rating INTEGER,
+    tags TEXT,
     watched_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

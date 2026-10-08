@@ -28,27 +28,8 @@ function normalizeFilm(row) {
   };
 }
 
-// Поля, которые юзер может менять в своей записи
-const USER_FIELDS = [
-  "status",
-  "is_favorite",
-  "source_type",
-  "source_name",
-  "user_rating",
-  "tags",
-];
-// Поля, которые относятся к самому фильму (глобальные метаданные)
-const FILM_FIELDS = [
-  "title",
-  "original_title",
-  "year",
-  "director",
-  "description",
-  "poster_url",
-];
-
 // ============================================================
-// GET /api/films
+// GET /api/films — фильмы юзера
 // ============================================================
 router.get("/", optionalAuth, (req, res) => {
   const userId = getUserId(req);
@@ -72,14 +53,14 @@ router.get("/", optionalAuth, (req, res) => {
 
   if (search) {
     sql += ` AND (
-      LOWER(f.title) LIKE @search OR
-      LOWER(f.original_title) LIKE @search OR
-      LOWER(f.director) LIKE @search OR
-      LOWER(uf.tags) LIKE @search OR
+      lower_ru(f.title) LIKE @search OR
+      lower_ru(f.original_title) LIKE @search OR
+      lower_ru(f.director) LIKE @search OR
+      lower_ru(uf.tags) LIKE @search OR
       EXISTS (
         SELECT 1 FROM film_genres fg2
         JOIN genres g2 ON g2.id = fg2.genre_id
-        WHERE fg2.film_id = f.id AND LOWER(g2.name) LIKE @search
+        WHERE fg2.film_id = f.id AND lower_ru(g2.name) LIKE @search
       )
     )`;
     params.search = `%${search.toLowerCase()}%`;
@@ -132,7 +113,7 @@ router.get("/", optionalAuth, (req, res) => {
 });
 
 // ============================================================
-// GET /api/films/:id — один фильм + актёры + режиссёр
+// GET /api/films/:id
 // ============================================================
 router.get("/:id", optionalAuth, (req, res) => {
   const userId = getUserId(req);
@@ -192,7 +173,7 @@ router.get("/:id", optionalAuth, (req, res) => {
 });
 
 // ============================================================
-// POST /api/films — добавить фильм
+// POST /api/films
 // ============================================================
 router.post("/", optionalAuth, async (req, res) => {
   const userId = getUserId(req);
@@ -359,13 +340,12 @@ router.post("/", optionalAuth, async (req, res) => {
 });
 
 // ============================================================
-// PATCH /api/films/:id — обновить (юзер-данные + метаданные фильма)
+// PATCH /api/films/:id
 // ============================================================
 router.patch("/:id", optionalAuth, (req, res) => {
   const userId = getUserId(req);
   const filmId = req.params.id;
 
-  // Проверяем, что фильм есть в библиотеке юзера
   const inLibrary = db
     .prepare("SELECT id FROM user_films WHERE user_id = ? AND film_id = ?")
     .get(userId, filmId);
@@ -376,7 +356,23 @@ router.patch("/:id", optionalAuth, (req, res) => {
 
   const body = req.body || {};
 
-  // Собираем обновления для двух таблиц
+  const USER_FIELDS = [
+    "status",
+    "is_favorite",
+    "source_type",
+    "source_name",
+    "user_rating",
+    "tags",
+  ];
+  const FILM_FIELDS = [
+    "title",
+    "original_title",
+    "year",
+    "director",
+    "description",
+    "poster_url",
+  ];
+
   const userUpdates = {};
   const filmUpdates = {};
   let newGenres = null;
@@ -396,7 +392,6 @@ router.patch("/:id", optionalAuth, (req, res) => {
   for (const key of FILM_FIELDS) {
     if (body[key] !== undefined) {
       const val = body[key];
-      // Пустая строка → null (кроме title — он обязателен)
       if (key === "title") {
         if (!val || !val.trim()) {
           return res
@@ -426,7 +421,6 @@ router.patch("/:id", optionalAuth, (req, res) => {
 
   try {
     const tx = db.transaction(() => {
-      // 1. Обновляем user_films
       if (hasUserChanges) {
         userUpdates.updated_at = new Date().toISOString();
         const setClause = Object.keys(userUpdates)
@@ -436,14 +430,11 @@ router.patch("/:id", optionalAuth, (req, res) => {
           `UPDATE user_films SET ${setClause} WHERE user_id = @userId AND film_id = @filmId`,
         ).run({ ...userUpdates, userId, filmId });
       } else {
-        // Даже если меняется только фильм — обновим updated_at в user_films,
-        // чтобы напоминания пересчитались корректно
         db.prepare(
           "UPDATE user_films SET updated_at = ? WHERE user_id = ? AND film_id = ?",
         ).run(new Date().toISOString(), userId, filmId);
       }
 
-      // 2. Обновляем films
       if (hasFilmChanges) {
         const setClause = Object.keys(filmUpdates)
           .map((k) => `${k} = @${k}`)
@@ -454,7 +445,6 @@ router.patch("/:id", optionalAuth, (req, res) => {
         });
       }
 
-      // 3. Обновляем жанры (полная замена)
       if (hasGenreChanges) {
         db.prepare("DELETE FROM film_genres WHERE film_id = ?").run(filmId);
 
@@ -477,7 +467,6 @@ router.patch("/:id", optionalAuth, (req, res) => {
 
     tx();
 
-    // Возвращаем обновлённый объект
     const updated = db
       .prepare(
         `
@@ -505,7 +494,7 @@ router.patch("/:id", optionalAuth, (req, res) => {
 });
 
 // ============================================================
-// DELETE /api/films/:id — убрать из библиотеки юзера
+// DELETE /api/films/:id
 // ============================================================
 router.delete("/:id", optionalAuth, (req, res) => {
   const userId = getUserId(req);

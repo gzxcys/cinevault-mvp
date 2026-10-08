@@ -5,7 +5,7 @@ import { optionalAuth } from "../middleware/auth.js";
 const router = express.Router();
 
 // ============================================================
-// GET /api/catalog — глобальный каталог всех фильмов
+// GET /api/catalog — глобальный каталог
 // ============================================================
 router.get("/", optionalAuth, (req, res) => {
   const userId = req.user?.id || null;
@@ -30,9 +30,9 @@ router.get("/", optionalAuth, (req, res) => {
 
   if (search) {
     where += ` AND (
-      LOWER(f.title) LIKE @search OR
-      LOWER(f.original_title) LIKE @search OR
-      LOWER(f.director) LIKE @search
+      lower_ru(f.title) LIKE @search OR
+      lower_ru(f.original_title) LIKE @search OR
+      lower_ru(f.director) LIKE @search
     )`;
     params.search = `%${search.toLowerCase()}%`;
   }
@@ -50,23 +50,17 @@ router.get("/", optionalAuth, (req, res) => {
     where += " AND f.type = @type";
     params.type = type;
   }
-
   if (year_from) {
     where += " AND f.year >= @year_from";
     params.year_from = parseInt(year_from, 10);
   }
-
   if (year_to) {
     where += " AND f.year <= @year_to";
     params.year_to = parseInt(year_to, 10);
   }
 
   const total = db
-    .prepare(
-      `
-    SELECT COUNT(*) AS c FROM films f ${where}
-  `,
-    )
+    .prepare(`SELECT COUNT(*) AS c FROM films f ${where}`)
     .get(params).c;
 
   let orderBy = "ORDER BY f.tmdb_rating DESC NULLS LAST";
@@ -144,7 +138,7 @@ router.get("/", optionalAuth, (req, res) => {
 });
 
 // ============================================================
-// GET /api/catalog/:id — детали глобального фильма (актёры, режиссёр)
+// GET /api/catalog/:id
 // ============================================================
 router.get("/:id", optionalAuth, (req, res) => {
   const userId = req.user?.id || null;
@@ -173,7 +167,6 @@ router.get("/:id", optionalAuth, (req, res) => {
   if (!film)
     return res.status(404).json({ error: "Фильм не найден в каталоге" });
 
-  // Актёры
   const actors = db
     .prepare(
       `
@@ -187,7 +180,6 @@ router.get("/:id", optionalAuth, (req, res) => {
     )
     .all(filmId);
 
-  // Режиссёры
   const directors = db
     .prepare(
       `
