@@ -15,7 +15,8 @@
     "migrate-users": "node src/migrate-users.js",
     "fix-genres": "node src/fixGenreDuplicates.js",
     "import-ru": "node src/importRussianContent.js",
-    "migrate-admin": "node src/migrate-admin.js"
+    "migrate-admin": "node src/migrate-admin.js",
+    "import-more": "node src/importMoreContent.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
