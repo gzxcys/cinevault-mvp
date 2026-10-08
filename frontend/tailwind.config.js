@@ -4,37 +4,62 @@ export default {
   theme: {
     extend: {
       colors: {
-        "dark-bg": "#0F172A",
-        "dark-card": "#1E293B",
-        "dark-border": "#334155",
-        electric: "#7DF9FF",
-        "electric-dim": "#5BC8CE",
+        // Blood-палитра
+        "blood-bg": "#0A0A0A",
+        "blood-card": "#151515",
+        "blood-elev": "#1C1C1C",
+        "blood-border": "#262626",
+        "blood-accent": "#E50914", // Netflix красный
+        "blood-glow": "#FF2D2D", // яркий для glow
+        "blood-dim": "#8B0000", // тёмный для фонов
+        "blood-muted": "#737373",
       },
       fontFamily: {
-        sans: [
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Inter",
-          "system-ui",
-          "sans-serif",
-        ],
+        display: ["Bebas Neue", "Oswald", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
       },
       boxShadow: {
-        neon: "0 0 20px rgba(125, 249, 255, 0.3)",
-        "neon-lg": "0 0 40px rgba(125, 249, 255, 0.5)",
+        "glow-sm": "0 0 10px rgba(229, 9, 20, 0.4)",
+        glow: "0 0 20px rgba(229, 9, 20, 0.5)",
+        "glow-lg": "0 0 40px rgba(229, 9, 20, 0.6)",
+        "glow-xl": "0 0 60px rgba(229, 9, 20, 0.7)",
+        "inset-red": "inset 0 0 20px rgba(229, 9, 20, 0.15)",
+        blood: "0 8px 24px rgba(0, 0, 0, 0.8)",
       },
       animation: {
-        "fade-in": "fadeIn 0.2s ease-out",
-        "slide-up": "slideUp 0.3s ease-out",
+        "glow-pulse": "glowPulse 2s ease-in-out infinite",
+        scan: "scan 4s linear infinite",
+        flicker: "flicker 4s linear infinite",
+        "slide-in": "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        float: "float 6s ease-in-out infinite",
+        shake: "shake 0.4s ease-in-out",
       },
       keyframes: {
-        fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
+        glowPulse: {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(229, 9, 20, 0.3)" },
+          "50%": { boxShadow: "0 0 40px rgba(229, 9, 20, 0.7)" },
         },
-        slideUp: {
-          "0%": { transform: "translateY(20px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
+        scan: {
+          "0%": { transform: "translateY(-100%)" },
+          "100%": { transform: "translateY(100%)" },
+        },
+        flicker: {
+          "0%, 19.9%, 22%, 62.9%, 64%, 64.9%, 70%, 100%": { opacity: "1" },
+          "20%, 21.9%, 63%, 63.9%, 65%, 69.9%": { opacity: "0.6" },
+        },
+        slideIn: {
+          "0%": { opacity: "0", transform: "translateY(20px) scale(0.98)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(-4px)" },
+          "75%": { transform: "translateX(4px)" },
         },
       },
     },

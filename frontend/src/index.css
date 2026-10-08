@@ -2,46 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Базовые настройки для всего приложения */
+/* ============================================
+   БАЗОВЫЕ НАСТРОЙКИ
+   ============================================ */
 @layer base {
   * {
-    -webkit-tap-highlight-color: transparent; /* убираем синюю подсветку при тапе на мобиле */
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
-    background-color: #0f172a;
-    color-scheme: dark; /* нативная тёмная тема для скроллбаров, инпутов и т.д. */
+    background-color: #0a0a0a;
+    color-scheme: dark;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: #0f172a;
+    background-color: #0a0a0a;
     color: #ffffff;
     font-family:
-      -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
-    overflow-x: hidden; /* запрещаем горизонтальный скролл */
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative;
   }
 
-  /* Красивый тонкий скроллбар */
+  /* Зерно/шум на весь фон — убивает стерильность */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  /* Тонкий красный скроллбар */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #0f172a;
+    background: #0a0a0a;
   }
   ::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 4px;
+    background: #262626;
+    border-radius: 0;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #7df9ff;
+    background: #e50914;
   }
 
-  /* Поля ввода тёмной темы */
   input,
   textarea,
   select {
@@ -50,45 +67,123 @@
   }
   input::placeholder,
   textarea::placeholder {
-    color: #94a3b8;
+    color: #525252;
   }
   input:focus,
   textarea:focus,
   select:focus {
     outline: none;
   }
+
+  /* Заголовки — Bebas Neue */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Bebas Neue", "Oswald", sans-serif;
+    letter-spacing: 0.02em;
+  }
 }
 
-/* Переиспользуемые классы */
+/* ============================================
+   КОМПОНЕНТЫ
+   ============================================ */
 @layer components {
-  .btn-electric {
-    @apply bg-electric text-dark-bg font-semibold px-4 py-2 rounded-lg
-           transition-all duration-200 hover:bg-electric-dim active:scale-95
-           shadow-neon hover:shadow-neon-lg;
+  /* Главная кнопка — красная, острая, агрессивная */
+  .btn-blood {
+    @apply bg-blood-accent text-white font-bold uppercase tracking-wider
+           px-5 py-3 rounded-sm
+           transition-all duration-200
+           hover:bg-blood-glow hover:shadow-glow-lg
+           active:scale-[0.97]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.08em;
   }
 
   .btn-ghost {
-    @apply bg-transparent border border-dark-border text-white
-           px-4 py-2 rounded-lg transition-all duration-200
-           hover:border-electric hover:text-electric active:scale-95;
+    @apply bg-transparent border-2 border-blood-border text-white
+           px-5 py-3 rounded-sm uppercase tracking-wider font-bold
+           transition-all duration-200
+           hover:border-blood-accent hover:text-blood-glow
+           hover:shadow-glow-sm active:scale-[0.97];
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.08em;
   }
 
   .card {
-    @apply bg-dark-card rounded-xl border border-dark-border
-           transition-all duration-200 hover:border-electric/50;
+    @apply bg-blood-card border border-blood-border rounded-sm
+           transition-all duration-300;
   }
 
-  /* Отступ под нижнюю навигацию на мобиле (bottom nav) */
+  .card-hover {
+    @apply hover:border-blood-accent hover:shadow-glow-lg
+           hover:-translate-y-1;
+  }
+
+  /* Крупный заголовок-плакат */
+  .title-display {
+    font-family: "Bebas Neue", sans-serif;
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+  }
+
+  /* Моно-цифра для счётчиков */
+  .num-mono {
+    font-family: "JetBrains Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Отступ под bottom nav */
   .pb-safe-mobile {
     padding-bottom: calc(5rem + env(safe-area-inset-bottom));
   }
 
-  /* Скрыть скроллбар, но оставить скролл (для горизонтальных рядов) */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Красная полоса под заголовком */
+  .accent-line {
+    position: relative;
+  }
+  .accent-line::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -8px;
+    width: 60px;
+    height: 3px;
+    background: #e50914;
+    box-shadow: 0 0 12px rgba(229, 9, 20, 0.8);
+  }
+
+  /* Острый угол срезанный */
+  .clip-corner {
+    clip-path: polygon(
+      0 0,
+      calc(100% - 12px) 0,
+      100% 12px,
+      100% 100%,
+      12px 100%,
+      0 calc(100% - 12px)
+    );
+  }
+
+  /* Диагональная штриховка */
+  .hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(229, 9, 20, 0.08) 8px,
+      rgba(229, 9, 20, 0.08) 9px
+    );
   }
 }

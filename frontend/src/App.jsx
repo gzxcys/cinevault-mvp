@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Film,
   Plus,
@@ -32,10 +33,12 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+      <div className="min-h-screen bg-blood-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-3 border-electric/30 border-t-electric rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Загрузка...</p>
+          <div className="w-12 h-12 border-2 border-blood-accent/30 border-t-blood-accent rounded-full animate-spin" />
+          <p className="text-blood-muted text-sm font-mono uppercase tracking-wider">
+            Загрузка...
+          </p>
         </div>
       </div>
     );
@@ -58,6 +61,7 @@ function MainApp({ user, onLogout }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [prefillFilm, setPrefillFilm] = useState(null);
   const [detailFilmId, setDetailFilmId] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isAdmin = Boolean(user?.is_admin);
 
@@ -124,6 +128,11 @@ function MainApp({ user, onLogout }) {
     setPrefillFilm(null);
   }
 
+  function handleLogout() {
+    setShowLogoutConfirm(false);
+    onLogout();
+  }
+
   const displayName = user.full_name || user.name || user.email;
   const initials = displayName
     .split(" ")
@@ -134,7 +143,11 @@ function MainApp({ user, onLogout }) {
 
   if (tab === "profile") {
     return (
-      <ProfilePage initialMode={profileMode} onBack={() => setTab("catalog")} />
+      <ProfilePage
+        initialMode={profileMode}
+        onBack={() => setTab("catalog")}
+        onLogout={() => setShowLogoutConfirm(true)}
+      />
     );
   }
 
@@ -143,73 +156,75 @@ function MainApp({ user, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white flex">
-      <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:h-screen border-r border-dark-border bg-dark-card/50 backdrop-blur">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold">
-            Cine<span className="text-electric">Vault</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">Твоя видеоколлекция</p>
-        </div>
-
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          <NavItem
-            icon={<Film size={20} />}
-            label="Моя коллекция"
-            active={tab === "catalog"}
-            onClick={() => setTab("catalog")}
-          />
-          <NavItem
-            icon={<Globe size={20} />}
-            label="Каталог фильмов"
-            active={tab === "global"}
-            onClick={() => setTab("global")}
-          />
-          <NavItem
-            icon={<Sparkles size={20} />}
-            label="Для тебя"
-            active={tab === "recommendations"}
-            onClick={() => setTab("recommendations")}
-          />
-          <NavItem
-            icon={<BarChart3 size={20} />}
-            label="Дашборд"
-            active={tab === "dashboard"}
-            onClick={() => setTab("dashboard")}
-          />
-          {isAdmin && (
-            <NavItem
-              icon={<Crown size={20} />}
-              label="Админка"
-              active={tab === "admin"}
-              onClick={() => setTab("admin")}
-            />
-          )}
-        </nav>
-
-        <div className="p-4 space-y-2 border-t border-dark-border">
+    <div className="min-h-screen bg-blood-bg text-white">
+      {/* ХЕДЕР */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-black/85 backdrop-blur-md border-b border-blood-border">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          {/* Лого */}
           <button
-            onClick={() => {
-              setPrefillFilm(null);
-              setShowAddModal(true);
-            }}
-            className="btn-electric w-full flex items-center justify-center gap-2"
+            onClick={() => setTab("catalog")}
+            className="flex items-center gap-2 group shrink-0"
           >
-            <Plus size={20} />
-            Добавить фильм
+            <h1 className="title-display text-2xl md:text-3xl tracking-wider leading-none">
+              CINE
+              <span className="text-blood-accent relative">
+                VAULT
+                <span
+                  className="absolute left-0 right-0 -bottom-1 h-[2px] bg-blood-accent
+                                 shadow-glow-sm opacity-0 group-hover:opacity-100
+                                 transition-opacity"
+                />
+              </span>
+            </h1>
           </button>
 
-          <div className="flex items-center gap-1.5 p-2 rounded-lg bg-dark-bg border border-dark-border">
-            <button
+          {/* Правая часть */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Add */}
+            <motion.button
+              onClick={() => {
+                setPrefillFilm(null);
+                setShowAddModal(true);
+              }}
+              className="btn-blood flex items-center gap-2 py-2 px-3 md:px-4 text-sm"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              <span className="hidden sm:inline">ДОБАВИТЬ</span>
+            </motion.button>
+
+            {/* Админка */}
+            {isAdmin && (
+              <motion.button
+                onClick={() => setTab("admin")}
+                className="p-2 rounded-sm border border-blood-border
+                           text-blood-muted hover:text-blood-accent
+                           hover:border-blood-accent hover:shadow-glow-sm
+                           transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Админка"
+              >
+                <Crown size={20} />
+              </motion.button>
+            )}
+
+            {/* Профиль */}
+            <motion.button
               onClick={() => goToProfile("view")}
-              className="flex items-center gap-2 flex-1 min-w-0 group"
-              title="Открыть профиль"
+              className="relative group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Профиль"
             >
               <div
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-electric to-purple-600
-                              flex items-center justify-center text-dark-bg font-bold text-xs
-                              shrink-0 overflow-hidden border-2 border-dark-border
-                              group-hover:border-electric transition-all"
+                className="w-10 h-10 rounded-sm overflow-hidden
+                              bg-gradient-to-br from-blood-accent to-blood-dim
+                              border border-blood-border
+                              group-hover:border-blood-accent group-hover:shadow-glow
+                              transition-all flex items-center justify-center
+                              text-white font-bold text-sm"
               >
                 {user.avatar_url ? (
                   <img
@@ -221,86 +236,34 @@ function MainApp({ user, onLogout }) {
                   initials
                 )}
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-semibold text-white truncate group-hover:text-electric transition flex items-center gap-1">
-                  {user.full_name || user.name}
-                  {isAdmin && (
-                    <Crown size={10} className="text-amber-400 shrink-0" />
-                  )}
-                </p>
-                <p className="text-[10px] text-slate-500 truncate">
-                  {user.email}
-                </p>
-              </div>
-            </button>
+              {isAdmin && (
+                <span
+                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full
+                                 bg-blood-accent shadow-glow-sm border border-black"
+                />
+              )}
+            </motion.button>
 
-            <button
-              onClick={() => goToProfile("edit")}
-              className="p-1.5 rounded text-slate-500 hover:text-electric hover:bg-electric/10 transition shrink-0"
-              title="Редактировать профиль"
+            {/* ВЫЙТИ */}
+            <motion.button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="p-2 rounded-sm border border-blood-border
+                         text-blood-muted hover:text-blood-glow
+                         hover:border-blood-accent hover:shadow-glow-sm
+                         transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Выйти из аккаунта"
             >
-              <Pencil size={14} />
-            </button>
-
-            <button
-              onClick={onLogout}
-              className="p-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition shrink-0"
-              title="Выйти"
-            >
-              <LogOut size={16} />
-            </button>
+              <LogOut size={20} />
+            </motion.button>
           </div>
         </div>
-      </aside>
+      </header>
 
-      <main className="flex-1 min-w-0 md:ml-64 pb-safe-mobile md:pb-0">
-        <header className="md:hidden sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
-          <div className="px-4 py-3 flex items-center justify-between">
-            <h1 className="text-xl font-bold">
-              Cine<span className="text-electric">Vault</span>
-            </h1>
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <button
-                  onClick={() => setTab("admin")}
-                  className="p-2 rounded-lg text-amber-400 hover:bg-amber-500/10 transition"
-                  aria-label="Админка"
-                >
-                  <Crown size={20} />
-                </button>
-              )}
-              <button
-                onClick={() => goToProfile("view")}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-electric to-purple-600
-                           flex items-center justify-center text-dark-bg font-bold text-xs
-                           overflow-hidden border-2 border-dark-border active:scale-95 transition"
-                aria-label="Профиль"
-              >
-                {user.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt={displayName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  initials
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  setPrefillFilm(null);
-                  setShowAddModal(true);
-                }}
-                className="p-2 rounded-lg bg-electric text-dark-bg active:scale-95 transition"
-                aria-label="Добавить фильм"
-              >
-                <Plus size={22} />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-4 md:p-8 min-w-0">
+      {/* КОНТЕНТ */}
+      <main className="pt-20 pb-28 min-w-0">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 min-w-0">
           {loading && <LoadingState />}
           {error && <ErrorState message={error} />}
           {!loading && !error && tab === "catalog" && (
@@ -329,9 +292,13 @@ function MainApp({ user, onLogout }) {
         </div>
       </main>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-card/95 backdrop-blur border-t border-dark-border">
+      {/* НИЖНЯЯ НАВИГАЦИЯ */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-30
+                      bg-black/85 backdrop-blur-md border-t border-blood-border"
+      >
         <div
-          className="flex"
+          className="max-w-3xl mx-auto flex items-center justify-around px-2"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <BottomNavItem
@@ -361,6 +328,7 @@ function MainApp({ user, onLogout }) {
         </div>
       </nav>
 
+      {/* Модалки */}
       <AddMovieModal
         open={showAddModal}
         onClose={closeAddModal}
@@ -381,36 +349,113 @@ function MainApp({ user, onLogout }) {
           reloadData();
         }}
       />
+
+      {/* Подтверждение выхода */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div
+            className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm
+                       flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowLogoutConfirm(false)}
+          >
+            <motion.div
+              className="bg-blood-card rounded-sm p-6 max-w-sm w-full
+                         border border-blood-accent/50 relative"
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-blood-accent shadow-glow" />
+
+              <div className="flex justify-center mb-4">
+                <div
+                  className="w-16 h-16 rounded-sm bg-blood-accent/10
+                                border-2 border-blood-accent/40
+                                flex items-center justify-center"
+                >
+                  <LogOut size={32} className="text-blood-glow" />
+                </div>
+              </div>
+
+              <h3 className="title-display text-2xl text-blood-glow mb-2 text-center">
+                ВЫЙТИ ИЗ АККАУНТА?
+              </h3>
+              <p className="text-sm text-blood-muted mb-5 text-center">
+                Ты выйдешь из аккаунта{" "}
+                <span className="text-white font-mono">{user.email}</span>
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="btn-ghost flex-1 py-2.5 text-sm"
+                >
+                  ОТМЕНА
+                </button>
+                <motion.button
+                  onClick={handleLogout}
+                  className="flex-1 py-2.5 rounded-sm bg-blood-accent text-white
+                             flex items-center justify-center gap-2
+                             hover:bg-blood-glow shadow-glow"
+                  style={{
+                    fontFamily: "Bebas Neue, sans-serif",
+                    letterSpacing: "0.06em",
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <LogOut size={16} />
+                  ВЫЙТИ
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function NavItem({ icon, label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-        active
-          ? "bg-electric/10 text-electric border border-electric/30"
-          : "text-slate-400 hover:text-white hover:bg-white/5"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
+// ============================================================
+// Нижняя навигация
+// ============================================================
 function BottomNavItem({ icon, label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
-        active ? "text-electric" : "text-slate-500"
-      }`}
+      className={`relative flex-1 flex flex-col items-center gap-1 py-3
+                  transition-colors duration-200 active:scale-95`}
     >
-      {icon}
-      <span className="text-[10px] font-medium">{label}</span>
+      {active && (
+        <motion.span
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px]
+                     bg-blood-accent rounded-b"
+          style={{ boxShadow: "0 0 12px rgba(229,9,20,0.9)" }}
+          layoutId="bottom-nav-indicator"
+          transition={{ type: "spring", stiffness: 500, damping: 35 }}
+        />
+      )}
+      <span
+        className={`transition-colors ${active ? "text-blood-accent" : "text-blood-muted"}`}
+      >
+        {icon}
+      </span>
+      <span
+        className={`text-[10px] font-bold uppercase tracking-wider
+                    transition-colors ${active ? "text-blood-accent" : "text-blood-muted"}`}
+        style={{
+          fontFamily: "Bebas Neue, sans-serif",
+          letterSpacing: "0.08em",
+        }}
+      >
+        {label}
+      </span>
     </button>
   );
 }
@@ -418,23 +463,30 @@ function BottomNavItem({ icon, label, active, onClick }) {
 function LoadingState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-3">
-      <div className="w-10 h-10 border-2 border-electric/30 border-t-electric rounded-full animate-spin" />
-      <p className="text-slate-400 text-sm">Загрузка коллекции...</p>
+      <div className="w-10 h-10 border-2 border-blood-accent/30 border-t-blood-accent rounded-full animate-spin" />
+      <p className="text-blood-muted text-sm font-mono uppercase tracking-wider">
+        Загрузка...
+      </p>
     </div>
   );
 }
 
 function ErrorState({ message }) {
   return (
-    <div className="card p-6 border-red-500/50 bg-red-500/5">
-      <p className="text-red-400 font-semibold mb-1">Ошибка загрузки</p>
-      <p className="text-slate-400 text-sm">{message}</p>
+    <div className="card p-6 border-blood-accent/50 bg-blood-accent/5">
+      <p
+        className="text-blood-glow font-bold uppercase tracking-wider mb-1"
+        style={{ fontFamily: "Bebas Neue, sans-serif" }}
+      >
+        Ошибка загрузки
+      </p>
+      <p className="text-blood-muted text-sm">{message}</p>
     </div>
   );
 }
 
 // ============================================================
-// CatalogView — с Fuse.js для поиска
+// CatalogView
 // ============================================================
 function CatalogView({ films, onFilmClick, request }) {
   const [search, setSearch] = useState("");
@@ -532,9 +584,11 @@ function CatalogView({ films, onFilmClick, request }) {
 
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold mb-1">Моя коллекция</h2>
-        <p className="text-slate-400 text-sm">
+      <div className="mb-6 accent-line">
+        <h2 className="title-display text-4xl md:text-5xl text-white mb-1">
+          МОЯ КОЛЛЕКЦИЯ
+        </h2>
+        <p className="text-blood-muted text-sm font-mono uppercase tracking-wider mt-3">
           {filtered.length} {filtered.length === 1 ? "позиция" : "позиций"}
           {hasActiveFilter && ` из ${films.length}`}
           {search.trim() && ` · по запросу «${search}»`}
@@ -556,22 +610,22 @@ function CatalogView({ films, onFilmClick, request }) {
       <div className="relative mb-6">
         <Search
           size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-electric pointer-events-none"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-blood-accent pointer-events-none"
         />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Поиск: название, режиссёр, жанр, тег..."
-          className="w-full bg-dark-card border border-dark-border rounded-xl
-                     pl-12 pr-12 py-3 text-white placeholder-slate-500
-                     focus:border-electric focus:shadow-neon transition-all"
+          className="w-full bg-blood-card border border-blood-border rounded-sm
+                     pl-12 pr-12 py-3 text-white placeholder-blood-muted/60 text-sm
+                     focus:border-blood-accent focus:shadow-glow-sm transition-all"
         />
         {search && (
           <button
             onClick={() => setSearch("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500
-                       hover:text-electric transition p-1"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-blood-muted
+                       hover:text-blood-accent transition p-1"
             aria-label="Очистить"
           >
             <X size={16} />
@@ -581,27 +635,16 @@ function CatalogView({ films, onFilmClick, request }) {
 
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-slate-400 font-medium mb-1">
+          <p
+            className="text-blood-muted font-bold uppercase tracking-wider mb-1 text-lg"
+            style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          >
             {search.trim() ? "Ничего не найдено" : "Здесь пока пусто"}
           </p>
-          <p className="text-slate-500 text-sm">
+          <p className="text-blood-muted/70 text-sm max-w-md mx-auto">
             {search.trim()
-              ? `По запросу «${search}» нет совпадений. Попробуй другое слово.`
-              : tab === "favorites"
-                ? "Добавляй фильмы в избранное, нажимая на сердечко"
-                : tab === "watching"
-                  ? "Отмечай фильмы и сериалы, которые смотришь прямо сейчас"
-                  : tab === "watched"
-                    ? "Фильмы со статусом «Просмотрено» появятся здесь"
-                    : tab === "planned"
-                      ? "Фильмы, которые ты хочешь посмотреть, появятся здесь"
-                      : tab === "local"
-                        ? "Добавь фильмы с локального диска или физического носителя"
-                        : sourceFilter
-                          ? "В этом источнике ничего нет"
-                          : genreFilter
-                            ? "В этом жанре ничего нет"
-                            : "Попробуй изменить запрос или добавь новый фильм"}
+              ? `По запросу «${search}» нет совпадений.`
+              : "Попробуй изменить запрос или добавь новый фильм"}
           </p>
         </div>
       ) : (
@@ -615,17 +658,24 @@ function CatalogView({ films, onFilmClick, request }) {
   );
 }
 
+// ============================================================
+// DashboardView
+// ============================================================
 function DashboardView({ stats, onTileClick, onFilmClick }) {
-  if (!stats) return <p className="text-slate-400">Статистика недоступна</p>;
+  if (!stats) return <p className="text-blood-muted">Статистика недоступна</p>;
 
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold mb-1">Дашборд</h2>
-        <p className="text-slate-400 text-sm">Аналитика твоей коллекции</p>
+      <div className="mb-6 accent-line">
+        <h2 className="title-display text-4xl md:text-5xl text-white mb-1">
+          ДАШБОРД
+        </h2>
+        <p className="text-blood-muted text-sm font-mono uppercase tracking-wider mt-3">
+          Аналитика твоей коллекции
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard
           label="Всего"
           value={stats.total}
@@ -660,61 +710,85 @@ function DashboardView({ stats, onTileClick, onFilmClick }) {
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="card p-5">
-          <h3 className="font-semibold mb-4">Источники контента</h3>
+          <h3
+            className="text-lg text-white mb-4 uppercase tracking-wider"
+            style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          >
+            Источники контента
+          </h3>
           <div className="space-y-3">
             <SourceBar
               label="Стриминг"
               count={stats.bySource?.streaming || 0}
               total={stats.total}
-              color="bg-purple-400"
+              color="bg-blood-accent"
             />
             <SourceBar
               label="Локальные файлы"
               count={stats.bySource?.local || 0}
               total={stats.total}
-              color="bg-blue-400"
+              color="bg-blue-500"
             />
             <SourceBar
               label="Физические носители"
               count={stats.bySource?.physical || 0}
               total={stats.total}
-              color="bg-orange-400"
+              color="bg-amber-500"
             />
           </div>
         </div>
 
         <div className="card p-5">
-          <h3 className="font-semibold mb-4">Топ жанров</h3>
+          <h3
+            className="text-lg text-white mb-4 uppercase tracking-wider"
+            style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          >
+            Топ жанров
+          </h3>
           <div className="space-y-2">
             {(stats.byGenre || []).slice(0, 5).map((g) => (
               <div key={g.genre} className="flex justify-between text-sm">
-                <span className="text-slate-300">{g.genre}</span>
-                <span className="text-electric font-mono">{g.count}</span>
+                <span className="text-blood-muted">{g.genre}</span>
+                <span className="text-blood-accent num-mono font-bold">
+                  {g.count}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
         <div className="card p-5">
-          <h3 className="font-semibold mb-2">Средний рейтинг</h3>
-          <p className="text-4xl font-bold text-electric">
+          <h3
+            className="text-lg text-white mb-3 uppercase tracking-wider"
+            style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          >
+            Средний рейтинг
+          </h3>
+          <p className="text-5xl font-bold text-blood-accent num-mono">
             {stats.avgRating || "—"}
-            <span className="text-lg text-slate-500 ml-1">/ 10</span>
+            <span className="text-xl text-blood-muted ml-1">/10</span>
           </p>
         </div>
 
         <div className="card p-5">
-          <h3 className="font-semibold mb-4">Топ режиссёров</h3>
+          <h3
+            className="text-lg text-white mb-4 uppercase tracking-wider"
+            style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          >
+            Топ режиссёров
+          </h3>
           <div className="space-y-2">
             {(stats.topDirectors || []).slice(0, 5).map((d, i) => (
               <div key={d.director} className="flex justify-between text-sm">
-                <span className="text-slate-300">
-                  <span className="text-slate-600 font-mono mr-2">
+                <span className="text-blood-muted">
+                  <span className="text-blood-muted/50 num-mono mr-2">
                     {i + 1}.
                   </span>
                   {d.director}
                 </span>
-                <span className="text-electric font-mono">{d.count}</span>
+                <span className="text-blood-accent num-mono font-bold">
+                  {d.count}
+                </span>
               </div>
             ))}
           </div>
@@ -726,25 +800,30 @@ function DashboardView({ stats, onTileClick, onFilmClick }) {
 
 function StatCard({ label, value, accent, onClick }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className={`card p-4 text-left transition-all group w-full
-                  hover:border-electric/60 hover:shadow-neon hover:-translate-y-0.5
-                  active:scale-[0.98] cursor-pointer
-                  ${accent ? "border-electric/40" : ""}`}
+      className={`relative bg-blood-card p-4 text-left transition-all group w-full
+                  rounded-sm border border-blood-border overflow-hidden
+                  hover:border-blood-accent hover:shadow-glow
+                  ${accent ? "border-blood-accent/60" : ""}`}
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      <p
-        className="text-xs text-slate-400 uppercase tracking-wide mb-1
-                    group-hover:text-slate-300 transition"
-      >
+      <span
+        className="absolute top-0 left-0 right-0 h-[2px] bg-blood-accent
+                       scale-x-0 group-hover:scale-x-100 transition-transform
+                       duration-300 origin-left shadow-glow"
+      />
+
+      <p className="text-[10px] text-blood-muted uppercase tracking-[0.15em] mb-2 font-mono">
         {label}
       </p>
       <p
-        className={`text-2xl md:text-3xl font-bold ${accent ? "text-electric" : "text-white"}`}
+        className={`text-4xl font-bold num-mono ${accent ? "text-blood-accent" : "text-white"}`}
       >
         {value}
       </p>
-    </button>
+    </motion.button>
   );
 }
 
@@ -752,16 +831,21 @@ function SourceBar({ label, count, total, color }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-slate-300">{label}</span>
-        <span className="text-slate-500">
-          {count} ({pct.toFixed(0)}%)
+      <div className="flex justify-between text-xs mb-1.5">
+        <span className="text-blood-muted uppercase tracking-wider font-mono">
+          {label}
+        </span>
+        <span className="text-white num-mono font-bold">
+          {count} · {pct.toFixed(0)}%
         </span>
       </div>
-      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${color} rounded-full transition-all`}
-          style={{ width: `${pct}%` }}
+      <div className="h-1 bg-blood-border rounded-full overflow-hidden">
+        <motion.div
+          className={`h-full ${color} rounded-full`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ boxShadow: "0 0 8px currentColor" }}
         />
       </div>
     </div>

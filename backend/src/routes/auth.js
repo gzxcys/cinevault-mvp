@@ -1,8 +1,12 @@
 import express from "express";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import db from "../db.js";
 import { signToken, generateVerificationToken } from "../utils/jwt.js";
-import { sendVerificationEmail } from "../utils/mailer.js";
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} from "../utils/mailer.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -313,6 +317,136 @@ router.post("/resend-verification", async (req, res) => {
     res.json({ message: "Письмо отправлено повторно." });
   } catch (err) {
     console.error("resend error:", err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ============================================================
+// POST /api/auth/forgot-password — запрос сброса пароля
+// ============================================================
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ error: "Укажи email" });
+    }
+
+    const user = db
+      .prepare(
+        "SELECT id, email, name, email_verified FROM users WHERE email = ?",
+      )
+      .get(email.toLowerCase().trim());
+
+    // Всегда отвечаем одинаково — не палим, существует ли аккаунт
+    const genericResponse = {
+      message:
+        "Если такой email зарегистрирован, мы отправили ссылку для сброса пароля.",
+    };
+
+    if (!user) {
+      return res.json(genericResponse);
+    }
+
+    // Генерим токен + срок действия (1 час)
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    db.prepare(
+      "UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?",
+    ).run(resetToken, resetExpires, user.id);
+
+    let emailSent = true;
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetToken);
+    } catch (mailErr) {
+      emailSent = false;
+      console.error("❌ reset mail error:", mailErr.message);
+    }
+
+    res.json({
+      ...genericResponse,
+      emailSent,
+      // В dev-режиме возвращаем токен, чтобы можно было тестировать без почты
+      ...(process.env.NODE_ENV === "development" && { resetToken }),
+    });
+  } catch (err) {
+    console.error("forgot-password error:", err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ============================================================
+// GET /api/auth/check-reset-token?token=... — проверка токена
+// ============================================================
+router.get("/check-reset-token", (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ error: "Токен не передан" });
+
+  const user = db
+    .prepare("SELECT id, email, reset_expires FROM users WHERE reset_token = ?")
+    .get(token);
+
+  if (!user) {
+    return res.status(400).json({ valid: false, error: "Невалидная ссылка" });
+  }
+
+  if (new Date(user.reset_expires) < new Date()) {
+    return res.status(400).json({ valid: false, error: "Ссылка просрочена" });
+  }
+
+  res.json({ valid: true, email: user.email });
+});
+
+// ============================================================
+// POST /api/auth/reset-password — установка нового пароля
+// ============================================================
+router.post("/reset-password", (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+
+    if (!token || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Токен и новый пароль обязательны" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "Пароль минимум 6 символов" });
+    }
+
+    const user = db
+      .prepare(
+        "SELECT id, email, reset_expires FROM users WHERE reset_token = ?",
+      )
+      .get(token);
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error: "Невалидная или просроченная ссылка" });
+    }
+
+    if (new Date(user.reset_expires) < new Date()) {
+      return res
+        .status(400)
+        .json({ error: "Ссылка просрочена. Запроси новую." });
+    }
+
+    const hash = bcrypt.hashSync(newPassword, 10);
+
+    db.prepare(
+      `
+      UPDATE users
+      SET password_hash = ?,
+          reset_token = NULL,
+          reset_expires = NULL,
+          updated_at = ?
+      WHERE id = ?
+    `,
+    ).run(hash, new Date().toISOString(), user.id);
+
+    res.json({ message: "Пароль успешно изменён. Теперь можно войти." });
+  } catch (err) {
+    console.error("reset-password error:", err);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Camera,
@@ -28,23 +29,46 @@ export default function ProfilePage({ onBack, initialMode = "view" }) {
   const { user, setUser } = useAuth();
   const [mode, setMode] = useState(initialMode);
 
-  if (mode === "view") {
-    return (
-      <ProfileView user={user} onBack={onBack} onEdit={() => setMode("edit")} />
-    );
-  }
-
   return (
-    <ProfileEdit
-      user={user}
-      setUser={setUser}
-      onBack={onBack}
-      onCancel={() => setMode("view")}
-      onSaved={() => setMode("view")}
-    />
+    <AnimatePresence mode="wait">
+      {mode === "view" ? (
+        <motion.div
+          key="view"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ProfileView
+            user={user}
+            onBack={onBack}
+            onEdit={() => setMode("edit")}
+          />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="edit"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ProfileEdit
+            user={user}
+            setUser={setUser}
+            onBack={onBack}
+            onCancel={() => setMode("view")}
+            onSaved={() => setMode("view")}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
+// ============================================================
+// VIEW
+// ============================================================
 function ProfileView({ user, onBack, onEdit }) {
   const displayName = user.full_name || user.name || user.email;
   const initials = displayName
@@ -55,18 +79,11 @@ function ProfileView({ user, onBack, onEdit }) {
     .toUpperCase();
 
   const contacts = [
-    {
-      icon: Globe,
-      label: "Сайт",
-      value: user.website,
-      isLink: true,
-      href: user.website,
-    },
+    { icon: Globe, label: "Сайт", value: user.website, href: user.website },
     {
       icon: Send,
       label: "Telegram",
       value: user.telegram,
-      isLink: true,
       href: user.telegram?.startsWith("@")
         ? `https://t.me/${user.telegram.slice(1)}`
         : null,
@@ -75,42 +92,70 @@ function ProfileView({ user, onBack, onEdit }) {
       icon: Instagram,
       label: "Instagram",
       value: user.instagram,
-      isLink: true,
       href: user.instagram?.startsWith("@")
         ? `https://instagram.com/${user.instagram.slice(1)}`
         : null,
     },
   ].filter((c) => c.value);
 
+  const isEmpty =
+    !user.full_name &&
+    !user.workplace &&
+    !user.bio &&
+    !user.city &&
+    contacts.length === 0;
+
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
-      <header className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
+    <div className="min-h-screen bg-blood-bg text-white">
+      {/* Верхний хедер */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-black/85 backdrop-blur-md border-b border-blood-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
+          <motion.button
             onClick={onBack}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
+            className="p-2 rounded-sm text-blood-muted border border-blood-border
+                       hover:text-white hover:border-blood-accent hover:shadow-glow-sm
+                       transition-all"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Назад"
           >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-lg font-bold flex-1">Профиль</h1>
-          <button
+            <ArrowLeft size={18} />
+          </motion.button>
+          <h1 className="title-display text-2xl md:text-3xl flex-1 leading-none">
+            ПРОФИЛЬ
+          </h1>
+          <motion.button
             onClick={onEdit}
-            className="btn-electric flex items-center gap-2 text-sm px-3 py-2"
+            className="btn-blood flex items-center gap-2 py-2 px-3 md:px-4 text-sm"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
           >
             <Pencil size={16} />
-            <span className="hidden sm:inline">Редактировать</span>
-          </button>
+            <span className="hidden sm:inline">ИЗМЕНИТЬ</span>
+          </motion.button>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto p-4 md:p-6 pb-24">
-        <div className="card p-6 mb-4">
+      <main className="max-w-3xl mx-auto pt-24 pb-24 px-4">
+        {/* Карточка юзера */}
+        <motion.div
+          className="bg-blood-card border border-blood-border rounded-sm p-6 mb-4
+                     relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {/* Красная верхняя полоса */}
+          <div
+            className="absolute top-0 left-0 right-0 h-[2px]
+                          bg-gradient-to-r from-transparent via-blood-accent to-transparent"
+          />
+
           <div className="flex flex-col sm:flex-row items-center gap-5">
             <div
-              className="w-28 h-28 rounded-full overflow-hidden
-                            bg-gradient-to-br from-electric to-purple-600
-                            border-4 border-dark-card shadow-neon-lg
+              className="w-28 h-28 rounded-sm overflow-hidden
+                            bg-gradient-to-br from-blood-accent to-blood-dim
+                            border-2 border-blood-border shadow-glow-lg
                             flex items-center justify-center shrink-0"
             >
               {user.avatar_url ? (
@@ -120,32 +165,42 @@ function ProfileView({ user, onBack, onEdit }) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-4xl font-bold text-dark-bg">
+                <span className="title-display text-4xl text-white">
                   {initials}
                 </span>
               )}
             </div>
 
-            <div className="flex-1 text-center sm:text-left">
-              <h2 className="text-xl font-bold mb-1">{displayName}</h2>
+            <div className="flex-1 text-center sm:text-left min-w-0">
+              <h2 className="title-display text-3xl md:text-4xl text-white mb-1 leading-none">
+                {displayName}
+              </h2>
               {user.full_name && user.full_name !== user.name && (
-                <p className="text-sm text-slate-400 mb-2">{user.name}</p>
+                <p className="text-sm text-blood-muted mb-2 font-mono">
+                  {user.name}
+                </p>
               )}
-              <p className="text-sm text-slate-400 flex items-center justify-center sm:justify-start gap-1.5 mb-2">
-                <Mail size={14} />
+              <p
+                className="text-sm text-blood-muted flex items-center justify-center sm:justify-start
+                            gap-1.5 mb-2 font-mono"
+              >
+                <Mail size={14} className="text-blood-accent" />
                 {user.email}
               </p>
               {(user.workplace || user.city) && (
-                <p className="text-sm text-slate-400 flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+                <p
+                  className="text-sm text-blood-muted flex items-center justify-center sm:justify-start
+                              gap-3 flex-wrap uppercase tracking-wider text-[11px] font-mono"
+                >
                   {user.workplace && (
                     <span className="flex items-center gap-1.5">
-                      <Briefcase size={14} />
+                      <Briefcase size={13} className="text-blood-accent" />
                       {user.workplace}
                     </span>
                   )}
                   {user.city && (
                     <span className="flex items-center gap-1.5">
-                      <MapPin size={14} />
+                      <MapPin size={13} className="text-blood-accent" />
                       {user.city}
                     </span>
                   )}
@@ -155,72 +210,108 @@ function ProfileView({ user, onBack, onEdit }) {
           </div>
 
           {user.bio && (
-            <div className="mt-5 pt-5 border-t border-dark-border">
-              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+            <div className="mt-5 pt-5 border-t border-blood-border">
+              <p className="text-[10px] text-blood-muted uppercase tracking-[0.2em] font-mono mb-2">
+                О себе
+              </p>
+              <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">
                 {user.bio}
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
 
+        {/* Контакты */}
         {contacts.length > 0 && (
-          <div className="card p-5 mb-4">
-            <h3 className="text-xs text-slate-400 uppercase tracking-wide mb-3">
+          <motion.div
+            className="bg-blood-card border border-blood-border rounded-sm p-5 mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+          >
+            <h3
+              className="text-xl text-blood-accent uppercase tracking-wider mb-4"
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                letterSpacing: "0.05em",
+              }}
+            >
               Контакты
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {contacts.map(({ icon: Icon, label, value, href }) => (
                 <div key={label} className="flex items-center gap-3 text-sm">
-                  <Icon size={16} className="text-electric shrink-0" />
-                  <span className="text-slate-500 w-20 shrink-0">{label}:</span>
+                  <Icon size={15} className="text-blood-accent shrink-0" />
+                  <span
+                    className="text-blood-muted w-20 shrink-0 text-[10px]
+                                   uppercase tracking-wider font-mono"
+                  >
+                    {label}
+                  </span>
                   {href ? (
-                    <a
+                    <motion.a
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-electric hover:underline truncate"
+                      className="text-blood-glow hover:text-white hover:underline truncate transition-colors"
+                      whileHover={{ x: 2 }}
                     >
                       {value}
-                    </a>
+                    </motion.a>
                   ) : (
-                    <span className="text-slate-300 truncate">{value}</span>
+                    <span className="text-white truncate">{value}</span>
                   )}
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {!user.full_name &&
-          !user.workplace &&
-          !user.bio &&
-          !user.city &&
-          contacts.length === 0 && (
-            <div className="card p-6 border-dashed border-electric/30 text-center">
-              <p className="text-slate-400 mb-3">Профиль пока пустой</p>
-              <button
-                onClick={onEdit}
-                className="btn-electric text-sm px-4 py-2 inline-flex items-center gap-2"
-              >
-                <Pencil size={16} />
-                Заполнить профиль
-              </button>
-            </div>
-          )}
+        {/* Пустой профиль */}
+        {isEmpty && (
+          <motion.div
+            className="bg-blood-card border border-dashed border-blood-accent/40 rounded-sm p-6 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+          >
+            <p className="text-blood-muted mb-4 uppercase tracking-wider font-mono text-sm">
+              Профиль пока пустой
+            </p>
+            <motion.button
+              onClick={onEdit}
+              className="btn-blood inline-flex items-center gap-2 px-5 py-2.5 text-sm"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Pencil size={16} />
+              Заполнить профиль
+            </motion.button>
+          </motion.div>
+        )}
 
-        <div className="mt-6 text-center text-xs text-slate-600">
+        {/* Дата регистрации */}
+        <motion.p
+          className="text-center text-[10px] text-blood-muted uppercase tracking-[0.3em] mt-8 font-mono"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           В CineVault с{" "}
           {new Date(user.created_at).toLocaleDateString("ru-RU", {
             day: "numeric",
             month: "long",
             year: "numeric",
           })}
-        </div>
+        </motion.p>
       </main>
     </div>
   );
 }
 
+// ============================================================
+// EDIT
+// ============================================================
 function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
   const [form, setForm] = useState({
     name: user?.name || "",
@@ -354,47 +445,73 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
-      <header className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
+    <div className="min-h-screen bg-blood-bg text-white">
+      <header className="fixed top-0 left-0 right-0 z-30 bg-black/85 backdrop-blur-md border-b border-blood-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
+          <motion.button
             onClick={onCancel}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
+            className="p-2 rounded-sm text-blood-muted border border-blood-border
+                       hover:text-white hover:border-blood-accent hover:shadow-glow-sm
+                       transition-all"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Назад"
           >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-lg font-bold flex-1">Редактирование профиля</h1>
+            <ArrowLeft size={18} />
+          </motion.button>
+          <h1 className="title-display text-2xl md:text-3xl flex-1 leading-none">
+            РЕДАКТИРОВАНИЕ ПРОФИЛЯ
+          </h1>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto p-4 md:p-6 pb-24">
-        {error && (
-          <div
-            className="mb-4 flex items-start gap-2 p-3 rounded-lg
-                          bg-red-500/10 border border-red-500/40 text-red-300 text-sm"
-          >
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <p>{error}</p>
-          </div>
-        )}
-        {success && (
-          <div
-            className="mb-4 flex items-start gap-2 p-3 rounded-lg
-                          bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 text-sm"
-          >
-            <Check size={16} className="shrink-0 mt-0.5" />
-            <p>{success}</p>
-          </div>
-        )}
+      <main className="max-w-3xl mx-auto pt-24 pb-24 px-4">
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="mb-4 flex items-start gap-2 p-3 rounded-sm
+                         bg-blood-accent/10 border-l-2 border-blood-accent text-blood-glow text-sm"
+            >
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <p>{error}</p>
+            </motion.div>
+          )}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="mb-4 flex items-start gap-2 p-3 rounded-sm
+                         bg-emerald-500/10 border-l-2 border-emerald-500 text-emerald-300 text-sm"
+            >
+              <Check size={16} className="shrink-0 mt-0.5" />
+              <p>{success}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="card p-6 mb-4">
+        {/* Аватар */}
+        <motion.div
+          className="bg-blood-card border border-blood-border rounded-sm p-6 mb-4
+                     relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div
+            className="absolute top-0 left-0 right-0 h-[2px]
+                          bg-gradient-to-r from-transparent via-blood-accent to-transparent"
+          />
+
           <div className="flex flex-col sm:flex-row items-center gap-5">
             <div className="relative shrink-0">
               <div
-                className="w-28 h-28 rounded-full overflow-hidden
-                              bg-gradient-to-br from-electric to-purple-600
-                              border-4 border-dark-card shadow-neon-lg
+                className="w-28 h-28 rounded-sm overflow-hidden
+                              bg-gradient-to-br from-blood-accent to-blood-dim
+                              border-2 border-blood-border shadow-glow-lg
                               flex items-center justify-center"
               >
                 {user?.avatar_url ? (
@@ -404,42 +521,50 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-4xl font-bold text-dark-bg">
+                  <span className="title-display text-4xl text-white">
                     {initials}
                   </span>
                 )}
               </div>
               {uploading && (
-                <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
-                  <Loader2 size={28} className="text-electric animate-spin" />
+                <div className="absolute inset-0 rounded-sm bg-black/70 flex items-center justify-center">
+                  <Loader2
+                    size={28}
+                    className="text-blood-accent animate-spin"
+                  />
                 </div>
               )}
             </div>
 
             <div className="flex-1 text-center sm:text-left">
-              <p className="font-semibold text-lg mb-3">
+              <p className="title-display text-2xl text-white mb-3">
                 {form.name || "Без имени"}
               </p>
               <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                <button
+                <motion.button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="btn-electric flex items-center gap-2 text-sm px-3 py-2
+                  className="btn-blood flex items-center gap-2 text-sm px-4 py-2.5
                              disabled:opacity-60"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   <Camera size={16} />
-                  {user?.avatar_url ? "Заменить фото" : "Загрузить фото"}
-                </button>
+                  {user?.avatar_url ? "ЗАМЕНИТЬ" : "ЗАГРУЗИТЬ"}
+                </motion.button>
                 {user?.avatar_url && (
                   <button
                     onClick={handleAvatarDelete}
                     disabled={uploading}
-                    className="btn-ghost flex items-center gap-2 text-sm px-3 py-2
-                               border-red-500/30 text-red-400 hover:border-red-500/60
-                               disabled:opacity-60"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-sm
+                               border border-blood-border text-blood-glow text-[11px]
+                               font-bold uppercase tracking-wider
+                               hover:border-blood-accent hover:shadow-glow-sm
+                               disabled:opacity-60 transition"
+                    style={{ fontFamily: "Bebas Neue, sans-serif" }}
                   >
-                    <Trash2 size={16} />
-                    Удалить
+                    <Trash2 size={14} />
+                    УДАЛИТЬ
                   </button>
                 )}
                 <input
@@ -450,61 +575,98 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
                   className="hidden"
                 />
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">
-                JPEG, PNG или WebP, до 1.5 МБ
+              <p className="text-[10px] text-blood-muted mt-3 uppercase tracking-wider font-mono">
+                JPEG, PNG, WebP · до 1.5 МБ
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
+        {/* Форма */}
         <form onSubmit={handleSave} className="space-y-4">
-          <div className="card p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-1">
+          <motion.div
+            className="bg-blood-card border border-blood-border rounded-sm p-5 space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.4 }}
+          >
+            <h2
+              className="text-xl text-blood-accent uppercase tracking-wider mb-2"
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                letterSpacing: "0.05em",
+              }}
+            >
               Личные данные
             </h2>
-            <ProfileField
-              icon={<User size={16} />}
-              label="Имя (короткое)"
+            <Field
+              icon={<User size={14} />}
+              label="Имя"
               value={form.name}
               onChange={(v) => update("name", v)}
               placeholder="Как тебя зовут?"
               required
             />
-            <ProfileField
-              icon={<User size={16} />}
+            <Field
+              icon={<User size={14} />}
               label="ФИО"
               value={form.full_name}
               onChange={(v) => update("full_name", v)}
               placeholder="Иванов Иван Иванович"
             />
-          </div>
+          </motion.div>
 
-          <div className="card p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-1">
+          <motion.div
+            className="bg-blood-card border border-blood-border rounded-sm p-5 space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+          >
+            <h2
+              className="text-xl text-blood-accent uppercase tracking-wider mb-2"
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                letterSpacing: "0.05em",
+              }}
+            >
               Работа и место
             </h2>
-            <ProfileField
-              icon={<Briefcase size={16} />}
+            <Field
+              icon={<Briefcase size={14} />}
               label="Место работы"
               value={form.workplace}
               onChange={(v) => update("workplace", v)}
               placeholder="Яндекс, Сбер, Фриланс..."
             />
-            <ProfileField
-              icon={<MapPin size={16} />}
+            <Field
+              icon={<MapPin size={14} />}
               label="Город"
               value={form.city}
               onChange={(v) => update("city", v)}
               placeholder="Москва"
             />
-          </div>
+          </motion.div>
 
-          <div className="card p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide mb-1">
+          <motion.div
+            className="bg-blood-card border border-blood-border rounded-sm p-5 space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+          >
+            <h2
+              className="text-xl text-blood-accent uppercase tracking-wider mb-2"
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                letterSpacing: "0.05em",
+              }}
+            >
               О себе и контакты
             </h2>
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <label
+                className="text-[10px] text-blood-muted uppercase tracking-[0.2em]
+                                font-mono mb-2 flex items-center gap-1.5"
+              >
                 <FileText size={14} />О себе
               </label>
               <textarea
@@ -513,64 +675,73 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
                 placeholder="Люблю Нолана, коплю на Blu-ray Дюны..."
                 rows={3}
                 maxLength={500}
-                className="w-full bg-dark-bg border border-dark-border rounded-xl
-                           px-4 py-3 text-white placeholder-slate-500 text-sm
-                           focus:border-electric transition resize-none"
+                className="w-full bg-black/40 border border-blood-border rounded-sm
+                           px-4 py-3 text-white placeholder-blood-muted/50 text-sm
+                           focus:border-blood-accent focus:shadow-glow-sm
+                           transition resize-none"
               />
-              <p className="text-[10px] text-slate-500 mt-1 text-right">
+              <p className="text-[10px] text-blood-muted mt-1 text-right font-mono">
                 {form.bio.length}/500
               </p>
             </div>
-            <ProfileField
-              icon={<Globe size={16} />}
+            <Field
+              icon={<Globe size={14} />}
               label="Сайт"
               value={form.website}
               onChange={(v) => update("website", v)}
               placeholder="https://example.com"
               type="url"
             />
-            <ProfileField
-              icon={<Send size={16} />}
+            <Field
+              icon={<Send size={14} />}
               label="Telegram"
               value={form.telegram}
               onChange={(v) => update("telegram", v)}
               placeholder="@username"
             />
-            <ProfileField
-              icon={<Instagram size={16} />}
+            <Field
+              icon={<Instagram size={14} />}
               label="Instagram"
               value={form.instagram}
               onChange={(v) => update("instagram", v)}
               placeholder="@username"
             />
-          </div>
+          </motion.div>
 
           <div className="flex gap-3">
             <button
               type="button"
               onClick={onCancel}
-              className="btn-ghost flex-1 py-3"
+              className="btn-ghost flex-1 py-3.5 text-sm"
             >
-              Отмена
+              ОТМЕНА
             </button>
-            <button
+            <motion.button
               type="submit"
               disabled={saving}
-              className="btn-electric flex-1 py-3 flex items-center justify-center gap-2
-                         disabled:opacity-60"
+              className="btn-blood flex-1 py-3.5 flex items-center justify-center gap-2
+                         disabled:opacity-60 relative overflow-hidden group"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {saving ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Сохраняю...
-                </>
-              ) : (
-                <>
-                  <Check size={18} />
-                  Сохранить
-                </>
-              )}
-            </button>
+              <span
+                className="absolute inset-0 hatch opacity-0 group-hover:opacity-100
+                               transition-opacity duration-300"
+              />
+              <span className="relative flex items-center gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    СОХРАНЯЮ...
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    СОХРАНИТЬ
+                  </>
+                )}
+              </span>
+            </motion.button>
           </div>
         </form>
       </main>
@@ -578,7 +749,7 @@ function ProfileEdit({ user, setUser, onBack, onCancel, onSaved }) {
   );
 }
 
-function ProfileField({
+function Field({
   icon,
   label,
   value,
@@ -589,9 +760,13 @@ function ProfileField({
 }) {
   return (
     <div>
-      <label className="text-xs text-slate-400 mb-1.5 flex items-center gap-1.5">
+      <label
+        className="text-[10px] text-blood-muted uppercase tracking-[0.2em]
+                        font-mono mb-2 flex items-center gap-1.5"
+      >
         {icon}
         {label}
+        {required && <span className="text-blood-accent">*</span>}
       </label>
       <input
         type={type}
@@ -599,9 +774,9 @@ function ProfileField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="w-full bg-dark-bg border border-dark-border rounded-xl
-                   px-4 py-3 text-white placeholder-slate-500 text-sm
-                   focus:border-electric transition"
+        className="w-full bg-black/40 border border-blood-border rounded-sm
+                   px-4 py-2.5 text-white placeholder-blood-muted/50 text-sm
+                   focus:border-blood-accent focus:shadow-glow-sm transition"
       />
     </div>
   );

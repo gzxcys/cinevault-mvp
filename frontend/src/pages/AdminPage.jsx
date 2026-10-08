@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Users,
-  Shield,
   Mail,
   MailX,
   Trash2,
@@ -18,6 +18,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import {
   adminGetStats,
@@ -61,33 +62,45 @@ export default function AdminPage({ onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
-      <header className="sticky top-0 z-20 bg-dark-bg/90 backdrop-blur border-b border-dark-border">
+    <div className="min-h-screen bg-blood-bg text-white">
+      {/* Хедер */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-black/85 backdrop-blur-md border-b border-blood-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
+          <motion.button
             onClick={onBack}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
+            className="p-2 rounded-sm text-blood-muted border border-blood-border
+                       hover:text-white hover:border-blood-accent hover:shadow-glow-sm
+                       transition-all"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Назад"
           >
-            <ArrowLeft size={20} />
-          </button>
+            <ArrowLeft size={18} />
+          </motion.button>
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            <Crown size={20} className="text-electric shrink-0" />
-            <h1 className="text-lg font-bold truncate">Админ-панель</h1>
+            <Crown size={22} className="text-blood-accent shrink-0" />
+            <h1 className="title-display text-2xl md:text-3xl leading-none">
+              АДМИНКА
+            </h1>
           </div>
-          <button
+          <motion.button
             onClick={() => {
               loadStats();
               if (tab === "films")
                 window.dispatchEvent(new Event("admin:reload-films"));
             }}
-            className="p-2 rounded-lg text-slate-400 hover:text-electric hover:bg-electric/10 transition"
+            className="p-2 rounded-sm text-blood-muted border border-blood-border
+                       hover:text-blood-accent hover:border-blood-accent hover:shadow-glow-sm
+                       transition-all"
+            whileHover={{ scale: 1.05, rotate: 45 }}
+            whileTap={{ scale: 0.95 }}
             aria-label="Обновить"
           >
-            <RefreshCw size={18} />
-          </button>
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          </motion.button>
         </div>
 
+        {/* Табы */}
         <div className="max-w-6xl mx-auto px-4 flex gap-1">
           <TabButton
             active={tab === "users"}
@@ -106,29 +119,42 @@ export default function AdminPage({ onBack }) {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-4 md:p-6 pb-24">
-        {toast && (
-          <div
-            className={`fixed top-24 left-1/2 -translate-x-1/2 z-30
-                          px-4 py-2 rounded-xl border backdrop-blur
-                          flex items-center gap-2 text-sm
+      <main className="max-w-6xl mx-auto pt-32 pb-24 px-4">
+        {/* Toast */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={`fixed top-32 left-1/2 -translate-x-1/2 z-40
+                          px-4 py-3 rounded-sm border backdrop-blur-md
+                          flex items-center gap-2 text-sm uppercase tracking-wider font-mono
                           ${
                             toast.type === "error"
-                              ? "bg-red-500/15 border-red-500/40 text-red-300"
-                              : "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                              ? "bg-blood-accent/15 border-blood-accent text-blood-glow"
+                              : "bg-emerald-500/15 border-emerald-500 text-emerald-300"
                           }`}
-          >
-            {toast.type === "error" ? (
-              <AlertCircle size={16} />
-            ) : (
-              <CheckCircle2 size={16} />
-            )}
-            {toast.text}
-          </div>
-        )}
+              style={{
+                fontFamily: "Bebas Neue, sans-serif",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {toast.type === "error" ? (
+                <AlertCircle size={16} />
+              ) : (
+                <CheckCircle2 size={16} />
+              )}
+              {toast.text}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {error && (
-          <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/40 text-red-300 text-sm">
+          <div
+            className="mb-4 p-4 rounded-sm bg-blood-accent/10 border-l-2 border-blood-accent
+                          text-blood-glow text-sm"
+          >
             Ошибка: {error}
           </div>
         )}
@@ -160,22 +186,27 @@ function TabButton({ active, onClick, icon: Icon, children }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium
-                  transition-all border-b-2 -mb-px
-                  ${
-                    active
-                      ? "text-electric border-electric bg-electric/5"
-                      : "text-slate-400 border-transparent hover:text-white hover:bg-white/5"
-                  }`}
+      className={`relative flex items-center gap-2 px-4 py-2.5 text-sm
+                  font-bold uppercase tracking-wider transition-all
+                  ${active ? "text-blood-glow" : "text-blood-muted hover:text-white"}`}
+      style={{ fontFamily: "Bebas Neue, sans-serif", letterSpacing: "0.06em" }}
     >
-      <Icon size={16} />
+      <Icon size={15} />
       {children}
+      {active && (
+        <motion.span
+          className="absolute bottom-0 left-0 right-0 h-[2px] bg-blood-accent"
+          style={{ boxShadow: "0 0 12px rgba(229,9,20,0.8)" }}
+          layoutId="admin-tab"
+          transition={{ type: "spring", stiffness: 500, damping: 35 }}
+        />
+      )}
     </button>
   );
 }
 
 // ============================================================
-// Плитки
+// Плитки статистики
 // ============================================================
 function StatsTiles({ stats, onUsers, onFilms, onSelectFilter }) {
   return (
@@ -220,7 +251,7 @@ function StatsTiles({ stats, onUsers, onFilms, onSelectFilter }) {
       />
       <StatTile
         icon={Shield}
-        label="Фильмов в БД"
+        label="Фильмов"
         value={stats.totalFilms}
         onClick={onFilms}
       />
@@ -230,41 +261,49 @@ function StatsTiles({ stats, onUsers, onFilms, onSelectFilter }) {
 
 function StatTile({ icon: Icon, label, value, accent, warn, onClick }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className={`card p-3 md:p-4 text-left transition-all w-full
-                  hover:border-electric/60 hover:shadow-neon hover:-translate-y-0.5
-                  active:scale-[0.98]
-                  ${accent ? "border-electric/40" : ""}
-                  ${warn ? "border-amber-500/40" : ""}`}
+      className={`relative bg-blood-card p-4 text-left rounded-sm border
+                  transition-all overflow-hidden group
+                  hover:border-blood-accent hover:shadow-glow
+                  ${accent ? "border-blood-accent/60" : ""}
+                  ${warn ? "border-amber-500/60" : "border-blood-border"}`}
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      <div className="flex items-center gap-2 mb-1">
+      <span
+        className="absolute top-0 left-0 right-0 h-[2px] bg-blood-accent
+                       scale-x-0 group-hover:scale-x-100 transition-transform
+                       duration-300 origin-left shadow-glow"
+      />
+
+      <div className="flex items-center gap-2 mb-2">
         <Icon
           size={14}
           className={
             accent
-              ? "text-electric"
+              ? "text-blood-accent"
               : warn
                 ? "text-amber-400"
-                : "text-slate-500"
+                : "text-blood-muted"
           }
         />
-        <p className="text-[10px] md:text-[11px] text-slate-400 uppercase tracking-wide truncate">
+        <p className="text-[10px] text-blood-muted uppercase tracking-[0.15em] font-mono truncate">
           {label}
         </p>
       </div>
       <p
-        className={`text-xl md:text-2xl font-bold
-                     ${accent ? "text-electric" : warn ? "text-amber-400" : "text-white"}`}
+        className={`text-3xl font-bold num-mono
+                     ${accent ? "text-blood-accent" : warn ? "text-amber-400" : "text-white"}`}
       >
         {value}
       </p>
-    </button>
+    </motion.button>
   );
 }
 
 // ============================================================
-// ВКЛАДКА «Пользователи»
+// USERS TAB
 // ============================================================
 function UsersTab({ me, onStatsChanged, showToast }) {
   const [users, setUsers] = useState([]);
@@ -341,7 +380,7 @@ function UsersTab({ me, onStatsChanged, showToast }) {
     setActionUserId(u.id);
     try {
       await adminResetPassword(u.id, newPass);
-      showToast(`Пароль обновлён: "${newPass}"`);
+      showToast(`Пароль: "${newPass}"`);
     } catch (e) {
       showToast(e.message, "error");
     } finally {
@@ -386,26 +425,32 @@ function UsersTab({ me, onStatsChanged, showToast }) {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search
-            size={18}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-blood-accent pointer-events-none"
           />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск по email или имени..."
-            className="w-full bg-dark-card border border-dark-border rounded-xl
-                       pl-11 pr-4 py-2.5 text-white placeholder-slate-500 text-sm
-                       focus:border-electric transition"
+            className="w-full bg-blood-card border border-blood-border rounded-sm
+                       pl-11 pr-4 py-2.5 text-white placeholder-blood-muted/60 text-sm
+                       focus:border-blood-accent focus:shadow-glow-sm transition"
           />
         </div>
 
         {filter !== "all" && (
-          <button
+          <motion.button
             onClick={() => setFilter("all")}
-            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg
-                       bg-electric/10 border border-electric/40 text-electric
-                       hover:bg-electric/20 transition"
+            className="flex items-center gap-1.5 text-[11px] px-3 py-2 rounded-sm
+                       bg-blood-accent/15 border border-blood-accent text-blood-glow
+                       uppercase tracking-wider"
+            style={{
+              fontFamily: "Bebas Neue, sans-serif",
+              letterSpacing: "0.06em",
+            }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
           >
             {filter === "verified" && (
               <>
@@ -423,13 +468,13 @@ function UsersTab({ me, onStatsChanged, showToast }) {
               </>
             )}
             <X size={12} />
-          </button>
+          </motion.button>
         )}
       </div>
 
       <div
         className="hidden md:grid grid-cols-12 gap-3 px-3 py-2
-                      text-[11px] text-slate-500 uppercase tracking-wide"
+                      text-[10px] text-blood-muted uppercase tracking-[0.15em] font-mono"
       >
         <div className="col-span-4">Пользователь</div>
         <div className="col-span-2 text-center">Email</div>
@@ -440,12 +485,12 @@ function UsersTab({ me, onStatsChanged, showToast }) {
 
       {fetching && users.length === 0 ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={28} className="text-electric animate-spin" />
+          <Loader2 size={28} className="text-blood-accent animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
+        <div className="text-center py-16 text-blood-muted">
           <Users size={40} className="mx-auto mb-3 opacity-50" />
-          <p>Ничего не найдено</p>
+          <p className="uppercase tracking-wider text-sm">Ничего не найдено</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -467,56 +512,73 @@ function UsersTab({ me, onStatsChanged, showToast }) {
         </div>
       )}
 
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4"
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            className="bg-dark-card rounded-2xl p-6 max-w-md w-full border border-red-500/40"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setConfirmDelete(null)}
           >
-            <h3 className="text-lg font-bold mb-2">Удалить пользователя?</h3>
-            <p className="text-sm text-slate-400 mb-1">
-              <span className="text-white font-medium">
+            <motion.div
+              className="bg-blood-card rounded-sm p-6 max-w-md w-full
+                         border border-blood-accent/50 relative"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-blood-accent shadow-glow" />
+              <h3 className="title-display text-2xl text-blood-glow mb-2">
+                УДАЛИТЬ ПОЛЬЗОВАТЕЛЯ?
+              </h3>
+              <p className="text-sm text-blood-muted mb-1 font-mono">
                 {confirmDelete.email}
-              </span>
-            </p>
-            <p className="text-xs text-slate-500 mb-5">
-              Необратимо. Все {confirmDelete.films_count} записей его библиотеки
-              будут удалены.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="btn-ghost flex-1 py-2.5"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={() => deleteUser(confirmDelete)}
-                disabled={actionUserId === confirmDelete.id}
-                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white font-semibold
-                           flex items-center justify-center gap-2 hover:bg-red-600
-                           transition disabled:opacity-60"
-              >
-                {actionUserId === confirmDelete.id ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-                Удалить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </p>
+              <p className="text-[11px] text-blood-muted mb-5">
+                Необратимо. Все{" "}
+                <b className="text-blood-glow">{confirmDelete.films_count}</b>{" "}
+                записей его библиотеки будут удалены.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="btn-ghost flex-1 py-2.5 text-sm"
+                >
+                  ОТМЕНА
+                </button>
+                <motion.button
+                  onClick={() => deleteUser(confirmDelete)}
+                  disabled={actionUserId === confirmDelete.id}
+                  className="flex-1 py-2.5 rounded-sm bg-blood-accent text-white
+                             flex items-center justify-center gap-2
+                             hover:bg-blood-glow shadow-glow disabled:opacity-60"
+                  style={{
+                    fontFamily: "Bebas Neue, sans-serif",
+                    letterSpacing: "0.06em",
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {actionUserId === confirmDelete.id ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  УДАЛИТЬ
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
 // ============================================================
-// ВКЛАДКА «Фильмы» — с пагинацией
+// FILMS TAB
 // ============================================================
 function FilmsTab({ showToast }) {
   const [films, setFilms] = useState([]);
@@ -530,7 +592,6 @@ function FilmsTab({ showToast }) {
 
   const totalPages = Math.max(1, Math.ceil(total / FILMS_PER_PAGE));
 
-  // Debounce поиска
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedSearch(search);
@@ -539,7 +600,6 @@ function FilmsTab({ showToast }) {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Загрузка страницы
   async function load() {
     setLoading(true);
     try {
@@ -569,7 +629,6 @@ function FilmsTab({ showToast }) {
     return () => window.removeEventListener("admin:reload-films", onReload);
   }, [debouncedSearch, page]);
 
-  // Скролл наверх при смене страницы
   function goToPage(p) {
     if (p < 1 || p > totalPages || p === page) return;
     setPage(p);
@@ -583,13 +642,8 @@ function FilmsTab({ showToast }) {
       setFilms((prev) => prev.filter((f) => f.id !== film.id));
       setTotal((t) => t - 1);
       setConfirmDelete(null);
-      showToast(`«${film.title}» удалён из каталога`);
-      // Если это была последняя позиция на странице — перейти на предыдущую
-      if (films.length === 1 && page > 1) {
-        setTimeout(() => setPage((p) => p - 1), 300);
-      } else {
-        setTimeout(load, 100);
-      }
+      showToast(`«${film.title}» удалён`);
+      setTimeout(load, 100);
     } catch (e) {
       showToast(e.message, "error");
     } finally {
@@ -602,50 +656,51 @@ function FilmsTab({ showToast }) {
 
   return (
     <>
-      {/* Поиск + инфо */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search
-            size={18}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-blood-accent pointer-events-none"
           />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск по названию или режиссёру..."
-            className="w-full bg-dark-card border border-dark-border rounded-xl
-                       pl-11 pr-4 py-2.5 text-white placeholder-slate-500 text-sm
-                       focus:border-electric transition"
+            className="w-full bg-blood-card border border-blood-border rounded-sm
+                       pl-11 pr-4 py-2.5 text-white placeholder-blood-muted/60 text-sm
+                       focus:border-blood-accent focus:shadow-glow-sm transition"
           />
         </div>
-        <p className="text-xs text-slate-500 shrink-0">
-          {total === 0
-            ? "Ничего не найдено"
-            : `Показано ${startItem}–${endItem} из ${total}`}
+        <p className="text-[10px] text-blood-muted shrink-0 font-mono uppercase tracking-wider">
+          {total === 0 ? "Ничего" : `${startItem}–${endItem} / ${total}`}
         </p>
       </div>
 
-      {/* Список */}
       {loading && films.length === 0 ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={28} className="text-electric animate-spin" />
+          <Loader2 size={28} className="text-blood-accent animate-spin" />
         </div>
       ) : films.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
+        <div className="text-center py-16 text-blood-muted">
           <Film size={40} className="mx-auto mb-3 opacity-50" />
-          <p>Ничего не найдено</p>
+          <p className="uppercase tracking-wider text-sm">Ничего не найдено</p>
         </div>
       ) : (
         <div
           className={`space-y-2 transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}
         >
           {films.map((film) => (
-            <div key={film.id} className="card p-2.5 flex items-center gap-3">
+            <div
+              key={film.id}
+              className="bg-blood-card border border-blood-border
+                                          rounded-sm p-2.5 flex items-center gap-3
+                                          hover:border-blood-accent/60 transition-all"
+            >
               <div
-                className="w-12 h-16 rounded-md overflow-hidden shrink-0
-                              bg-gradient-to-br from-electric/20 to-purple-600/20
-                              flex items-center justify-center"
+                className="w-12 h-16 rounded-sm overflow-hidden shrink-0
+                              bg-black border border-blood-border
+                              flex items-center justify-center relative"
               >
                 {film.poster_url ? (
                   <img
@@ -657,34 +712,39 @@ function FilmsTab({ showToast }) {
                     }}
                   />
                 ) : (
-                  <Film size={20} className="text-slate-600" />
+                  <Film size={20} className="text-blood-muted" />
                 )}
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blood-accent" />
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">
-                  {film.title}{" "}
+                <p className="text-sm font-bold text-white truncate">
+                  {film.title}
                   {film.year && (
-                    <span className="text-slate-500 font-normal">
-                      ({film.year})
+                    <span className="text-blood-muted font-normal font-mono">
+                      {" "}
+                      · {film.year}
                     </span>
                   )}
                 </p>
-                <p className="text-[11px] text-slate-500 truncate">
+                <p className="text-[10px] text-blood-muted truncate uppercase tracking-wider font-mono">
                   {film.director || "—"} ·{" "}
                   {film.type === "series" ? "Сериал" : "Фильм"}
                 </p>
-                <p className="text-[10px] text-slate-600 mt-0.5">
+                <p className="text-[10px] text-blood-muted/70 mt-0.5 font-mono">
                   В {film.users_count}{" "}
                   {film.users_count === 1 ? "коллекции" : "коллекциях"}
                 </p>
               </div>
 
-              <button
+              <motion.button
                 onClick={() => setConfirmDelete(film)}
                 disabled={deletingId === film.id}
-                className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10
+                className="p-2 rounded-sm text-blood-muted
+                           hover:text-blood-glow hover:bg-blood-accent/10
                            transition shrink-0 disabled:opacity-50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 title="Удалить из каталога"
               >
                 {deletingId === film.id ? (
@@ -692,61 +752,76 @@ function FilmsTab({ showToast }) {
                 ) : (
                   <Trash2 size={16} />
                 )}
-              </button>
+              </motion.button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Пагинация */}
       {totalPages > 1 && (
         <Pagination page={page} totalPages={totalPages} onChange={goToPage} />
       )}
 
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4"
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            className="bg-dark-card rounded-2xl p-6 max-w-md w-full border border-red-500/40"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setConfirmDelete(null)}
           >
-            <h3 className="text-lg font-bold mb-2">
-              Удалить фильм из каталога?
-            </h3>
-            <p className="text-sm text-slate-300 mb-2">{confirmDelete.title}</p>
-            <p className="text-xs text-slate-500 mb-5">
-              Фильм исчезнет из глобального каталога и удалится из{" "}
-              <b className="text-red-400">{confirmDelete.users_count}</b>{" "}
-              {confirmDelete.users_count === 1 ? "коллекции" : "коллекций"}{" "}
-              пользователей. Необратимо.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="btn-ghost flex-1 py-2.5"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete)}
-                disabled={deletingId === confirmDelete.id}
-                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white font-semibold
-                           flex items-center justify-center gap-2 hover:bg-red-600
-                           transition disabled:opacity-60"
-              >
-                {deletingId === confirmDelete.id ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-                Удалить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <motion.div
+              className="bg-blood-card rounded-sm p-6 max-w-md w-full
+                         border border-blood-accent/50 relative"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-blood-accent shadow-glow" />
+              <h3 className="title-display text-2xl text-blood-glow mb-2">
+                УДАЛИТЬ ИЗ КАТАЛОГА?
+              </h3>
+              <p className="text-sm text-white mb-2">{confirmDelete.title}</p>
+              <p className="text-[11px] text-blood-muted mb-5">
+                Фильм исчезнет из глобального каталога и удалится из{" "}
+                <b className="text-blood-glow">{confirmDelete.users_count}</b>{" "}
+                {confirmDelete.users_count === 1 ? "коллекции" : "коллекций"}.
+                Необратимо.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="btn-ghost flex-1 py-2.5 text-sm"
+                >
+                  ОТМЕНА
+                </button>
+                <motion.button
+                  onClick={() => handleDelete(confirmDelete)}
+                  disabled={deletingId === confirmDelete.id}
+                  className="flex-1 py-2.5 rounded-sm bg-blood-accent text-white
+                             flex items-center justify-center gap-2
+                             hover:bg-blood-glow shadow-glow disabled:opacity-60"
+                  style={{
+                    fontFamily: "Bebas Neue, sans-serif",
+                    letterSpacing: "0.06em",
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {deletingId === confirmDelete.id ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  УДАЛИТЬ
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -761,31 +836,32 @@ function Pagination({ page, totalPages, onChange }) {
   );
 
   return (
-    <div className="mt-6 flex flex-col items-center gap-3">
+    <div className="mt-8 flex flex-col items-center gap-3">
       <div className="flex items-center gap-1 flex-wrap justify-center">
-        {/* Prev */}
-        <button
+        <motion.button
           onClick={() => onChange(page - 1)}
           disabled={page === 1}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium
-                     border border-dark-border text-slate-400
-                     hover:border-electric/60 hover:text-electric
+          className="flex items-center gap-1 px-3 py-2 rounded-sm text-[11px]
+                     font-bold uppercase tracking-wider
+                     border border-blood-border text-blood-muted
+                     hover:border-blood-accent hover:text-blood-glow
                      disabled:opacity-30 disabled:cursor-not-allowed
-                     disabled:hover:border-dark-border disabled:hover:text-slate-400
-                     transition"
-          aria-label="Предыдущая страница"
+                     disabled:hover:border-blood-border disabled:hover:text-blood-muted
+                     transition-all"
+          style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
-          <ChevronLeft size={14} />
-          <span className="hidden sm:inline">Назад</span>
-        </button>
+          <ChevronLeft size={13} />
+          Назад
+        </motion.button>
 
-        {/* Номера */}
         {pages.map((p, idx) => {
           if (p === "...") {
             return (
               <span
                 key={`dots-${idx}`}
-                className="px-2 text-slate-600 select-none"
+                className="px-2 text-blood-muted/50 select-none"
               >
                 …
               </span>
@@ -793,74 +869,52 @@ function Pagination({ page, totalPages, onChange }) {
           }
           const isActive = p === page;
           return (
-            <button
+            <motion.button
               key={p}
               onClick={() => onChange(p)}
-              className={`min-w-[36px] px-2.5 py-2 rounded-lg text-xs font-mono font-semibold
+              className={`min-w-[36px] px-2.5 py-2 rounded-sm text-xs font-bold num-mono
                           border transition-all
                           ${
                             isActive
-                              ? "bg-electric/15 border-electric text-electric shadow-neon"
-                              : "bg-dark-card border-dark-border text-slate-400 hover:border-electric/60 hover:text-white"
+                              ? "bg-blood-accent/20 border-blood-accent text-blood-glow shadow-glow-sm"
+                              : "bg-blood-card border-blood-border text-blood-muted hover:border-blood-accent/60 hover:text-white"
                           }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               {p}
-            </button>
+            </motion.button>
           );
         })}
 
-        {/* Next */}
-        <button
+        <motion.button
           onClick={() => onChange(page + 1)}
           disabled={page === totalPages}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium
-                     border border-dark-border text-slate-400
-                     hover:border-electric/60 hover:text-electric
+          className="flex items-center gap-1 px-3 py-2 rounded-sm text-[11px]
+                     font-bold uppercase tracking-wider
+                     border border-blood-border text-blood-muted
+                     hover:border-blood-accent hover:text-blood-glow
                      disabled:opacity-30 disabled:cursor-not-allowed
-                     disabled:hover:border-dark-border disabled:hover:text-slate-400
-                     transition"
-          aria-label="Следующая страница"
+                     transition-all"
+          style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
-          <span className="hidden sm:inline">Вперёд</span>
-          <ChevronRight size={14} />
-        </button>
+          Вперёд
+          <ChevronRight size={13} />
+        </motion.button>
       </div>
 
-      {/* Быстрый переход по номеру страницы */}
-      <div className="flex items-center gap-2 text-xs text-slate-500">
-        <span>Страница</span>
-        <input
-          type="number"
-          min={1}
-          max={totalPages}
-          defaultValue={page}
-          key={page}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const v = parseInt(e.target.value, 10);
-              if (v >= 1 && v <= totalPages) onChange(v);
-            }
-          }}
-          onBlur={(e) => {
-            const v = parseInt(e.target.value, 10);
-            if (v >= 1 && v <= totalPages && v !== page) onChange(v);
-          }}
-          className="w-16 bg-dark-card border border-dark-border rounded-lg
-                     px-2 py-1 text-center text-white font-mono text-xs
-                     focus:border-electric transition"
-        />
-        <span>из {totalPages}</span>
-      </div>
+      <p className="text-[10px] text-blood-muted font-mono uppercase tracking-wider">
+        Страница {page} / {totalPages}
+      </p>
     </div>
   );
 }
 
-// Генерирует массив номеров страниц с ellipsis:
-// [1, '...', 5, 6, 7, '...', 33]
 function getPaginationRange(current, total) {
-  const delta = 1; // сколько номеров показывать вокруг текущего
+  const delta = 1;
   const range = [];
-
   for (let i = 1; i <= total; i++) {
     if (
       i === 1 ||
@@ -870,27 +924,21 @@ function getPaginationRange(current, total) {
       range.push(i);
     }
   }
-
   const result = [];
   let prev = 0;
-
   for (const i of range) {
     if (prev) {
-      if (i - prev === 2) {
-        result.push(prev + 1);
-      } else if (i - prev > 2) {
-        result.push("...");
-      }
+      if (i - prev === 2) result.push(prev + 1);
+      else if (i - prev > 2) result.push("...");
     }
     result.push(i);
     prev = i;
   }
-
   return result;
 }
 
 // ============================================================
-// Карточка юзера
+// UserRow
 // ============================================================
 function UserRow({
   u,
@@ -912,15 +960,20 @@ function UserRow({
 
   return (
     <div
-      className={`card p-3 md:grid md:grid-cols-12 md:gap-3 md:items-center
-                     ${isMe ? "border-electric/30" : ""}`}
+      className={`bg-blood-card rounded-sm p-3 md:grid md:grid-cols-12 md:gap-3 md:items-center
+                     border transition-all
+                     ${
+                       isMe
+                         ? "border-blood-accent/40"
+                         : "border-blood-border hover:border-blood-accent/40"
+                     }`}
     >
       <div className="md:col-span-4 flex items-center gap-3 min-w-0">
         <div
-          className="w-10 h-10 rounded-full overflow-hidden shrink-0
-                        bg-gradient-to-br from-electric to-purple-600
-                        flex items-center justify-center text-dark-bg font-bold text-xs
-                        border border-dark-border"
+          className="w-10 h-10 rounded-sm overflow-hidden shrink-0
+                        bg-gradient-to-br from-blood-accent to-blood-dim
+                        border border-blood-border flex items-center justify-center
+                        text-white font-bold text-xs"
         >
           {u.avatar_url ? (
             <img
@@ -933,25 +986,32 @@ function UserRow({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
+          <p className="text-sm font-bold text-white truncate flex items-center gap-1.5">
             {u.full_name || u.name}
             {u.is_admin && (
-              <Crown size={12} className="text-amber-400 shrink-0" />
+              <Crown size={12} className="text-blood-accent shrink-0" />
             )}
             {isMe && (
-              <span className="text-[9px] text-electric border border-electric/40 rounded px-1 shrink-0">
+              <span
+                className="text-[9px] text-blood-glow border border-blood-accent/50
+                               rounded-sm px-1 shrink-0 uppercase tracking-wider"
+                style={{ fontFamily: "Bebas Neue, sans-serif" }}
+              >
                 вы
               </span>
             )}
           </p>
-          <p className="text-[11px] text-slate-500 truncate md:hidden">
+          <p className="text-[10px] text-blood-muted truncate md:hidden font-mono">
             {u.email}
           </p>
         </div>
       </div>
 
       <div className="hidden md:block md:col-span-2 text-center">
-        <p className="text-xs text-slate-300 truncate" title={u.email}>
+        <p
+          className="text-[11px] text-blood-muted truncate font-mono"
+          title={u.email}
+        >
           {u.email}
         </p>
       </div>
@@ -967,74 +1027,87 @@ function UserRow({
                 ? "Снять админа"
                 : "Сделать админом"
           }
-          className={`text-[11px] px-2 py-1 rounded-full border transition-all
+          className={`text-[10px] px-2 py-1 rounded-sm border
+                      transition-all uppercase tracking-wider font-bold
                       disabled:opacity-60 disabled:cursor-not-allowed
                       ${
                         u.is_admin
-                          ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
-                          : "bg-dark-bg border-dark-border text-slate-500 hover:border-amber-500/40"
+                          ? "bg-blood-accent/15 border-blood-accent/60 text-blood-glow"
+                          : "bg-black/40 border-blood-border text-blood-muted hover:border-blood-accent/50"
                       }`}
+          style={{ fontFamily: "Bebas Neue, sans-serif" }}
         >
-          {u.is_admin ? "👑 Админ" : "Юзер"}
+          {u.is_admin ? "👑 АДМИН" : "ЮЗЕР"}
         </button>
       </div>
 
       <div className="hidden md:block md:col-span-1 text-center">
-        <p className="text-sm font-mono text-white">{u.films_count}</p>
-        <p className="text-[10px] text-slate-500">просм. {u.watched_count}</p>
+        <p className="text-sm font-bold text-white num-mono">{u.films_count}</p>
+        <p className="text-[9px] text-blood-muted uppercase tracking-wider font-mono">
+          {u.watched_count} просм.
+        </p>
       </div>
 
       <div className="md:col-span-4 flex items-center gap-1.5 flex-wrap mt-3 md:mt-0 md:justify-end">
         <button
           onClick={onToggleVerify}
           disabled={busy}
-          className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border
-                      transition-all disabled:opacity-50
+          className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-sm border
+                      transition-all disabled:opacity-50 uppercase tracking-wider font-bold
                       ${
                         u.email_verified
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                          : "bg-red-500/10 border-red-500/30 text-red-300"
+                          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300"
+                          : "bg-blood-accent/10 border-blood-accent/50 text-blood-glow"
                       }`}
+          style={{ fontFamily: "Bebas Neue, sans-serif" }}
         >
-          {u.email_verified ? <Mail size={12} /> : <MailX size={12} />}
-          {u.email_verified ? "Подтв." : "Не подтв."}
+          {u.email_verified ? <Mail size={11} /> : <MailX size={11} />}
+          {u.email_verified ? "ПОДТВ." : "НЕ ПОДТВ."}
         </button>
 
         {!u.email_verified && (
-          <button
+          <motion.button
             onClick={onResend}
             disabled={busy}
-            className="p-2 rounded-lg text-slate-400 hover:text-electric hover:bg-electric/10
-                       transition disabled:opacity-50"
+            className="p-2 rounded-sm text-blood-muted hover:text-blood-accent
+                       hover:bg-blood-accent/10 transition disabled:opacity-50"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             title="Переотправить письмо"
           >
-            <Mail size={14} />
-          </button>
+            <Mail size={13} />
+          </motion.button>
         )}
 
-        <button
+        <motion.button
           onClick={onResetPassword}
           disabled={busy}
-          className="p-2 rounded-lg text-slate-400 hover:text-electric hover:bg-electric/10
-                     transition disabled:opacity-50"
+          className="p-2 rounded-sm text-blood-muted hover:text-blood-accent
+                     hover:bg-blood-accent/10 transition disabled:opacity-50"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           title="Сбросить пароль"
         >
-          <KeyRound size={14} />
-        </button>
+          <KeyRound size={13} />
+        </motion.button>
 
         {!isMe && (
-          <button
+          <motion.button
             onClick={onDelete}
             disabled={busy}
-            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10
-                       transition disabled:opacity-50"
+            className="p-2 rounded-sm text-blood-muted hover:text-blood-glow
+                       hover:bg-blood-accent/10 transition disabled:opacity-50"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             title="Удалить"
           >
-            <Trash2 size={14} />
-          </button>
+            <Trash2 size={13} />
+          </motion.button>
         )}
 
-        {busy && <Loader2 size={14} className="text-electric animate-spin" />}
+        {busy && (
+          <Loader2 size={13} className="text-blood-accent animate-spin" />
+        )}
       </div>
     </div>
   );
