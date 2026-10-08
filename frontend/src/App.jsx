@@ -10,7 +10,6 @@ import {
   X,
   Crown,
   Globe,
-  Lightbulb,
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext.jsx";
 import { getFilms, getStats } from "./services/api.js";
@@ -318,7 +317,7 @@ function MainApp({ user, onLogout }) {
             />
           )}
           {!loading && !error && tab === "recommendations" && (
-            <RecommendationsView />
+            <RecommendationsView onAddToLibrary={openAddWithPrefill} />
           )}
           {!loading && !error && tab === "dashboard" && (
             <DashboardView
@@ -515,7 +514,6 @@ function CatalogView({ films, onFilmClick, request }) {
       .slice(0, 12);
   }, [filmsAfterSource]);
 
-  // Финальная фильтрация через Fuse.js
   const filtered = useMemo(() => {
     let list = filmsAfterSource;
 
